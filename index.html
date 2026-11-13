@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1198dd" />
+    <title>Cozy City Café — 3D Preview</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="Khung cảnh phố 3D"></canvas>
+      <header>
+        <span>COZY CITY CAFÉ</span><small>REFERENCE STUDY · 3D</small>
+      </header>
+      <aside><p id="status" role="status">Đang dựng khung cảnh…</p></aside>
+      <nav aria-label="Điều khiển camera">
+        <button id="orbit" aria-pressed="true">Free Camera</button>
+        <button id="pov" aria-pressed="false">Đi bộ · WASD</button>
+        <button id="reset">↗ Reset to Reference View</button>
+        <button id="capture" aria-label="Chụp ảnh khung cảnh">
+          ↓ Chụp ảnh
+        </button>
+      </nav>
+      <footer id="help">
+        Kéo để xoay · Cuộn để thu phóng · Chuột phải để dịch chuyển
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
