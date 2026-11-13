@@ -35,6 +35,10 @@ import { person, batchRigidParts } from "./life.js";
 import { sampleWalk } from "./pedestrians.js";
 import { buildCafeAnnex } from "./cafe-annex.js";
 import { buildSea } from "./sea.js";
+import { districtBuilding } from "./neighborhood-buildings.js";
+import { FRONTAGES, NEIGHBORHOOD as N } from "./neighborhood-plan.js";
+import { matchingRoad, civicSpaces } from "./civic-spaces.js";
+import { buildMarineLife } from "./marine-life.js";
 import { URBAN_PLAN as P } from "./urban-plan.js";
 let seed = 9143;
 const random = () => {
@@ -141,67 +145,6 @@ function paved(scene, x, z, w, d, texture) {
   map.repeat.set(w / 5, d / 5);
   map.needsUpdate = true;
   return box(scene, x, 0.08, z, w, 0.3, d, mat("#fff", { map }), 0.04);
-}
-function townHouse(scene, x, z, color, rotation = 0, sign = "") {
-  const g = group(scene, x, 0, z, rotation),
-    w = 6.5,
-    d = 5.2;
-  box(g, 0, 3.65, -d / 2, w, 7.3, d, color, 0.22);
-  box(g, 0, 0.5, 0.1, w, 0.65, 0.2, "#d4c09f", 0.06);
-  box(g, 0, 3.65, 0.1, w + 0.2, 0.25, 0.3, "#e9d8b5", 0.07);
-  archedWindow(g, -1.7, 0.25, 0.06, 2.0, 3.0);
-  archedWindow(g, 1.65, 0.25, 0.06, 2.0, 3.0);
-  for (const xx of [-1.8, 1.8]) {
-    archedWindow(g, xx, 4.05, 0.07, 1.65, 2.35);
-    box(g, xx, 3.97, 0.5, 2.25, 0.16, 1.2, "#b9c5ad", 0.12);
-    for (let i = 0; i < 6; i++)
-      rod(
-        g,
-        [xx - 0.95 + i * 0.38, 4.06, 1.02],
-        [xx - 0.95 + i * 0.38, 4.8, 1.02],
-        0.022,
-        "#698e7d",
-      );
-    rod(g, [xx - 1.03, 4.8, 1.02], [xx + 1.03, 4.8, 1.02], 0.035, "#6d9180");
-    flowerBox(g, xx, 4.01, 0.72, 1.42, 0.45, true);
-  }
-  for (const side of [-1, 1]) {
-    const wall = group(
-      g,
-      side * (w / 2 + 0.025),
-      0,
-      -2.6,
-      (side * Math.PI) / 2,
-    );
-    for (const y of [0.35, 4.05])
-      for (const xx of [-1.25, 1.25])
-        archedWindow(wall, xx, y, 0.0, 1.45, y < 1 ? 2.8 : 2.35);
-  }
-  const back = group(g, 0, 0, -d - 0.04, Math.PI);
-  for (const y of [0.35, 4.05])
-    for (const xx of [-1.7, 1.7])
-      archedWindow(back, xx, y, 0, 1.8, y < 1 ? 2.8 : 2.35);
-  tiledRoof(g, 0, 7.42, -2.5, 7.1, 6.25);
-  for (const xx of [-2.2, 0, 2.2]) {
-    foliage(g, xx, 7.75, -1.6, 0.48, 30);
-    vine(g, xx, 7.65, 0.55, 1.4);
-  }
-  if (sign)
-    label(
-      g,
-      sign,
-      0,
-      3.37,
-      0.31,
-      4.8,
-      0.45,
-      "#fff0c8",
-      "#568674",
-      "italic bold 77px serif",
-    );
-  lantern(g, -2.9, 2.8, 0.46, 1.1);
-  lantern(g, 2.9, 2.8, 0.46, 1.1);
-  return g;
 }
 function seasideKiosk(scene) {
   const g = group(scene, 56, 0, 10);
@@ -566,31 +509,73 @@ function beach(scene) {
     );
   }
 }
-function finishFloristBack(florist){
- // Keep the approved frontage and awning; finish the sides exposed by the new
- // aerial view and make its existing solid roof a usable garden terrace.
- const rear=group(florist,0,0,-8.05,Math.PI);
- for(const y of [.30,4.45])for(const x of [-3,0,3])archedWindow(rear,x,y,0,2.05,y<1?3.0:2.45);
- for(const y of [3.9,7.78])box(rear,0,y,.08,9.1,.19,.25,'#d9c5a0',.055);
- for(const side of [-1,1]){
-  const wall=group(florist,side*4.53,0,-3.5,side*Math.PI/2);
-  for(const y of [.30,4.45])for(const x of [-2.8,0,2.8])archedWindow(wall,x,y,0,1.85,y<1?3.0:2.45);
-  box(wall,0,3.9,.09,9,.19,.25,'#d9c5a0',.055);
- }
- box(florist,0,8.04,-3.5,8.5,.12,8.2,'#d4bc8d',.07);
- for(const z of [-7.35,.35]){
-  for(let i=0;i<12;i++)rod(florist,[-4.05+i*.74,8.10,z],[-4.05+i*.74,9.18,z],.027,'#7d9576');
-  rod(florist,[-4.12,9.2,z],[4.12,9.2,z],.05,'#c2bc91');
- }
- for(const x of [-4.1,4.1]){for(let i=0;i<11;i++)rod(florist,[x,8.10,-7.3+i*.75],[x,9.18,-7.3+i*.75],.027,'#7d9576');rod(florist,[x,9.2,-7.35],[x,9.2,.4],.05,'#c2bc91');}
- const access=group(florist,-2.8,8.1,-6.05);box(access,0,1.25,-.2,1.8,2.5,1.8,'#8ba98e',.13);box(access,0,2.58,-.2,2.06,.16,2.06,'#e4d5b0',.07);archedWindow(access,0,.02,.74,1.1,2.15);
- for(const x of [-3,3])for(const z of [-3.7,-.15])rod(florist,[x,8.1,z],[x,10.8,z],.07,'#b69d71');
- for(let i=0;i<9;i++)rod(florist,[-3.2,10.8,-3.7+i*.45],[3.2,10.8,-3.7+i*.45],.045,'#c6ae7e');
- for(const x of [-3,3])rod(florist,[x,10.8,-3.9],[x,10.8,.15],.055,'#b69d71');
- table(florist,.6,8.11,-2,.62);chair(florist,-.3,8.11,-2,Math.PI/2);chair(florist,1.5,8.11,-2,-Math.PI/2);
- for(const x of [-3,0,3])flowerBox(florist,x,8.11,.16,1.8,.55,true);
- for(const x of [1.3,3.1])flowerBox(florist,x,8.11,-7.10,1.3,.55,true);
- for(const x of [-2.8,2.8]){foliage(florist,x,10.82,-.25,.5,36);vine(florist,x,10.8,-.1,1.45);}
+function finishFloristBack(florist) {
+  // Keep the approved frontage and awning; finish the sides exposed by the new
+  // aerial view and make its existing solid roof a usable garden terrace.
+  const rear = group(florist, 0, 0, -8.05, Math.PI);
+  for (const y of [0.3, 4.45])
+    for (const x of [-3, 0, 3])
+      archedWindow(rear, x, y, 0, 2.05, y < 1 ? 3.0 : 2.45);
+  for (const y of [3.9, 7.78])
+    box(rear, 0, y, 0.08, 9.1, 0.19, 0.25, "#d9c5a0", 0.055);
+  for (const side of [-1, 1]) {
+    const wall = group(florist, side * 4.53, 0, -3.5, (side * Math.PI) / 2);
+    for (const y of [0.3, 4.45])
+      for (const x of [-2.8, 0, 2.8])
+        archedWindow(wall, x, y, 0, 1.85, y < 1 ? 3.0 : 2.45);
+    box(wall, 0, 3.9, 0.09, 9, 0.19, 0.25, "#d9c5a0", 0.055);
+  }
+  box(florist, 0, 8.04, -3.5, 8.5, 0.12, 8.2, "#d4bc8d", 0.07);
+  for (const z of [-7.35, 0.35]) {
+    for (let i = 0; i < 12; i++)
+      rod(
+        florist,
+        [-4.05 + i * 0.74, 8.1, z],
+        [-4.05 + i * 0.74, 9.18, z],
+        0.027,
+        "#7d9576",
+      );
+    rod(florist, [-4.12, 9.2, z], [4.12, 9.2, z], 0.05, "#c2bc91");
+  }
+  for (const x of [-4.1, 4.1]) {
+    for (let i = 0; i < 11; i++)
+      rod(
+        florist,
+        [x, 8.1, -7.3 + i * 0.75],
+        [x, 9.18, -7.3 + i * 0.75],
+        0.027,
+        "#7d9576",
+      );
+    rod(florist, [x, 9.2, -7.35], [x, 9.2, 0.4], 0.05, "#c2bc91");
+  }
+  const access = group(florist, -2.8, 8.1, -6.05);
+  box(access, 0, 1.25, -0.2, 1.8, 2.5, 1.8, "#8ba98e", 0.13);
+  box(access, 0, 2.58, -0.2, 2.06, 0.16, 2.06, "#e4d5b0", 0.07);
+  archedWindow(access, 0, 0.02, 0.74, 1.1, 2.15);
+  for (const x of [-3, 3])
+    for (const z of [-3.7, -0.15])
+      rod(florist, [x, 8.1, z], [x, 10.8, z], 0.07, "#b69d71");
+  for (let i = 0; i < 9; i++)
+    rod(
+      florist,
+      [-3.2, 10.8, -3.7 + i * 0.45],
+      [3.2, 10.8, -3.7 + i * 0.45],
+      0.045,
+      "#c6ae7e",
+    );
+  for (const x of [-3, 3])
+    rod(florist, [x, 10.8, -3.9], [x, 10.8, 0.15], 0.055, "#b69d71");
+  table(florist, 0.6, 8.11, -2, 0.62);
+  chair(florist, -0.3, 8.11, -2, Math.PI / 2);
+  chair(florist, 1.5, 8.11, -2, -Math.PI / 2);
+  for (const x of [-3, 0, 3])
+    flowerBox(florist, x, 8.11, 0.16, 1.8, 0.55, true);
+  for (const x of [1.3, 3.1])
+    flowerBox(florist, x, 8.11, -7.1, 1.3, 0.55, true);
+  for (const x of [-2.8, 2.8]) {
+    foliage(florist, x, 10.82, -0.25, 0.5, 36);
+    vine(florist, x, 10.8, -0.1, 1.45);
+  }
 }
 function westernGarden(scene, tiles) {
   // The wider camera reveals the old unused base behind the town. Finish it as
@@ -613,14 +598,25 @@ function westernGarden(scene, tiles) {
   meadow.wrapS = meadow.wrapT = THREE.RepeatWrapping;
   meadow.repeat.set(5, 12);
   const grass = mat("#fff", { map: meadow });
-  box(scene, -41.75, 0.02, -18, 40.5, 0.2, 96, grass, 0.02);
+  box(scene, -43.25, 0.02, -28, 43.5, 0.2, 150, grass, 0.02);
   sphere(scene, -52, -1, -20, 14, 8, 90, grass);
   for (const [x, z, color] of [
     [-29, 10, "#9bbfb2"],
     [-29, -10, "#d2afba"],
     [-29, -30, "#acbdd2"],
   ])
-    townHouse(scene, x, z, color, Math.PI / 2);
+    districtBuilding(scene, {
+      x,
+      z,
+      color,
+      rotation: Math.PI / 2,
+      w: 7.5,
+      d: 5.2,
+      floors: z === 10 ? 1 : z === -10 ? 3 : 2,
+      style: z === 10 ? "gable" : z === -10 ? "terrace" : "duplex",
+      sign:
+        z === 10 ? "GARDEN COTTAGE" : z === -10 ? "ROSE HOUSE" : "HILL VIEW",
+    });
   const curve = new THREE.CatmullRomCurve3([
     new THREE.Vector3(-36.5, 0.231, 24),
     new THREE.Vector3(-36.7, 0.231, 10),
@@ -692,94 +688,114 @@ function westernGarden(scene, tiles) {
   label(sign, "GARDEN WALK", 0, 2.04, 0.075, 1.9, 0.3, "#f6e5b9", "#83a18a");
 }
 export function extendCity(scene, district) {
-  let sea, coastalWalker, fisher;
+  let sea, marine, coastalWalker, fisher;
+  const neighborhoodWalkers = [];
   withFlowers(scene, () => {
     const tiles = paving();
     westernGarden(scene, tiles);
     finishFloristBack(district.florist);
-    // Fill the eastern land with planned blocks and courts, not arbitrary props.
-    paved(scene, 40, -21.5, 29, 93, tiles);
+    districtBuilding(scene, {
+      id: "west-patisserie",
+      x: -16,
+      z: 18,
+      rotation: Math.PI / 2,
+      w: 9,
+      d: 5.2,
+      floors: 2,
+      color: "#d5b7c1",
+      style: "terrace",
+      sign: "PETIT JARDIN",
+      awning: "#c999ac",
+    });
+    districtBuilding(scene, {
+      id: "west-cottage",
+      x: -16,
+      z: 32,
+      rotation: Math.PI / 2,
+      w: 8,
+      d: 5.2,
+      floors: 1,
+      color: "#e0c492",
+      style: "gable",
+      sign: "SUNNY BAKERY",
+      awning: "#d4aa6f",
+    });
+    for (const z of [17, 31]) {
+      table(scene, -12, 0.23, z, 0.6);
+      chair(scene, -12.9, 0.23, z, Math.PI / 2);
+      chair(scene, -11.1, 0.23, z, -Math.PI / 2);
+      flowerBox(scene, -8, 0.23, z + 2, 2.5, 0.8, true);
+      tree(scene, -7, z - 2, 5.6, 1.45);
+    }
+
+    // Complete the open parcel beyond the old florist without moving its front.
+    districtBuilding(scene, {
+      id: "market-square-shop",
+      x: 20,
+      z: 22,
+      rotation: 0,
+      w: 9,
+      d: 5.5,
+      floors: 2,
+      color: "#a4bfc2",
+      style: "terrace",
+      sign: "MARKET & GIFTS",
+      awning: "#b19cb8",
+    });
+    for (const z of [22, 32]) {
+      flowerBox(scene, -5, 0.23, z, 1.2, 3.8, true);
+      bench(scene, -3.4, z, Math.PI / 2);
+    }
+    // Re-plan only the previous expansion: distinct frontage types face a real
+    // street; the café, original high-rise skyline and approved core stay put.
+    paved(scene, 30.9, -20.2, 10.8, 95.6, tiles);
+    paved(scene, 49.0, -20.2, 11.0, 95.6, tiles);
     paved(scene, 60, -14, 12, 108, tiles);
-    const asphalt = artwork(
-      (c, W, H) => {
-        c.fillStyle = "#777a72";
-        c.fillRect(0, 0, W, H);
-        for (let i = 0; i < 10000; i++) {
-          c.fillStyle = i % 2 ? "#888b82" : "#6f746e";
-          c.fillRect(random() * W, random() * H, 1, 1);
-        }
-      },
-      256,
-      256,
-    );
-    asphalt.wrapS = asphalt.wrapT = THREE.RepeatWrapping;
-    asphalt.repeat.set(32, 4.5);
-    box(
-      scene,
-      29,
-      -0.112,
-      31,
-      50,
-      0.18,
-      7,
-      mat("#92998e", { map: asphalt }),
-      0.025,
-    );
-    paved(scene, 45.75, 25.5, 40.5, 4, tiles);
+    for (const walk of N.junctionWalks)
+      paved(scene, walk.x, walk.z, walk.w, walk.d, tiles);
     paved(scene, 36.75, 36.1, 56.5, 3.2, tiles);
-    for (const z of [27.35, 34.65])
-      for (let x = 9.2; x < 54; x += 0.65)
-        box(scene, x, 0.06, z, 0.61, 0.35, 0.35, "#dfcbb0", 0.04);
-    for (let x = 12; x < 51; x += 6)
-      box(scene, x, -0.012, 31, 2.4, 0.012, 0.13, "#f1e6cd", 0.008);
-    for (let i = 0; i < 9; i++)
-      box(
-        scene,
-        50.8 + i * 0.36,
-        -0.008,
-        31,
-        0.19,
-        0.012,
-        6.2,
-        "#f1e8d5",
-        0.006,
-      );
-    for (const [x, name, color] of [
-      [32, "PETITE BAKERY", "#b7b99c"],
-      [41, "COZY MART", "#8fb6a8"],
-      [50, "ATELIER", "#d7b1b0"],
-    ]) {
-      const g = townHouse(scene, x, 20, color, 0, name);
-      flowerBox(g, -2.0, 0.23, 0.7, 1.2, 0.65, true);
-      flowerBox(g, 2.0, 0.23, 0.7, 1.2, 0.65, true);
-      chalkboard(g, 0, 0.23, 1.1, "WELCOME");
+    // Continue the original asphalt to the foreground map exit. The branch is
+    // a proper T off that road, with a second shopfront block opposite it.
+    matchingRoad(scene, 4, 42.25, 9, 9.5, district.roadMaterial);
+    paved(scene, -11, 42.5, 21, 9, tiles);
+    paved(scene, 37.25, 42.5, 57.5, 9, tiles);
+    for (let z = 36; z < 47; z += 0.65)
+      for (const x of [-0.38, 8.7])
+        box(scene, x, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.04);
+    for (const z of [39, 45])
+      box(scene, 4, -0.012, z, 0.15, 0.012, 2.8, "#eee0b8", 0.01);
+    districtBuilding(scene, {
+      id: "promenade-corner",
+      x: 22,
+      z: 38.2,
+      rotation: Math.PI,
+      w: 10,
+      d: 6.5,
+      floors: 2,
+      color: "#85b69f",
+      style: "corner",
+      sign: "COZY CORNER",
+      awning: "#7da88a",
+    });
+    districtBuilding(scene, {
+      id: "coastal-crafts",
+      x: 48,
+      z: 38.2,
+      rotation: Math.PI,
+      w: 10,
+      d: 6.5,
+      floors: 1,
+      color: "#9ab9c4",
+      style: "gable",
+      sign: "COASTAL CRAFTS",
+      awning: "#89adbd",
+    });
+    for (const x of [12, 34, 59]) {
+      tree(scene, x, 41, 6.2, 1.5);
+      flowerBox(scene, x, 0.23, 44, 2.2, 0.8, true);
     }
-    for (const z of [-6, -20, -34])
-      townHouse(
-        scene,
-        36,
-        z,
-        ["#91c1ad", "#d6a8b8", "#a6c5dc"][Math.abs(z / 2) % 3 | 0],
-        Math.PI / 2,
-      );
-    for (const [i, z] of [-6, -20, -34, -48, -60].entries())
-      townHouse(
-        scene,
-        44,
-        z,
-        ["#e3bd85", "#8fc5bd", "#c3aed8"][i % 3],
-        -Math.PI / 2,
-      );
-    for (const z of [-13, -27, -41]) {
-      tree(scene, 39, z, 6.2, 1.4);
-      flowerBox(scene, 42.8, 0.23, z, 1.2, 0.8, true);
-    }
-    for (const x of [28, 38, 48]) {
-      tree(scene, x, 23.2, 6.5, 1.5);
-      flowerBox(scene, x + 2, 0.23, 21.2, 1.5, 0.7, true);
-    }
-    tree(scene, 38, -53, 6.3, 1.5);
-    tree(scene, 38, -62, 6.3, 1.5);
+    civicSpaces(scene, tiles, district.roadMaterial, paved);
+    for (const frontage of FRONTAGES) districtBuilding(scene, frontage);
     // Landscaped headland closes the northern promenade instead of exposing
     // an unfinished terrain edge beyond the houses.
     sphere(scene, 60, -0.3, -84, 7.8, 2.8, 16, "#9cad82");
@@ -814,10 +830,11 @@ export function extendCity(scene, district) {
       chair(scene, x - 0.85, 0.23, z, Math.PI / 2);
       chair(scene, x + 0.85, 0.23, z, -Math.PI / 2);
     }
-    wayfinding(scene, 20.0, 24);
+    wayfinding(scene, 26.0, 24);
     wayfinding(scene, 54.4, 25);
     buildCafeAnnex(scene, district.cafe);
     sea = buildSea(scene);
+    marine = buildMarineLife(scene);
     coastalWalker = person(scene, {
       x: P.coastWalk.x,
       z: P.coastWalk.z,
@@ -826,6 +843,18 @@ export function extendCity(scene, district) {
       hat: true,
       hair: "#674e3d",
     });
+    for (const [i, x] of [35.2, 44.5].entries()) {
+      const route = { x, z: -59, end: 23 };
+      const actor = person(scene, {
+        x,
+        z: -20,
+        color: i ? "#b49cc7" : "#84b7bc",
+        skirt: !!i,
+        hat: !i,
+        hair: "#624c3b",
+      });
+      neighborhoodWalkers.push({ actor, route, phase: i * 39 + 12 });
+    }
     fisher = person(scene, {
       x: 82,
       z: 13.7,
@@ -873,6 +902,7 @@ export function extendCity(scene, district) {
   return {
     update(dt, time) {
       sea.update(time);
+      marine.update(time);
       const p = sampleWalk(time, P.coastWalk);
       coastalWalker.g.position.z = p.z;
       const turn = Math.atan2(
@@ -885,6 +915,23 @@ export function extendCity(scene, district) {
           (limb.rotation.x =
             Math.sin(time * 4.5) * 0.32 * p.stride * [1, -1, -1, 1][i]),
       );
+      for (const { actor, route, phase } of neighborhoodWalkers) {
+        const p = sampleWalk(time + phase, route);
+        actor.g.position.set(p.x, 0, p.z);
+        const turn = Math.atan2(
+          Math.sin(p.heading - actor.g.rotation.y),
+          Math.cos(p.heading - actor.g.rotation.y),
+        );
+        actor.g.rotation.y += turn * Math.min(1, dt * 4);
+        actor.limbs.forEach(
+          (limb, i) =>
+            (limb.rotation.x =
+              Math.sin((time + phase) * 4.5) *
+              0.32 *
+              p.stride *
+              [1, -1, -1, 1][i]),
+        );
+      }
       fisher.g.rotation.y = Math.sin(time * 0.3) * 0.025;
     },
   };

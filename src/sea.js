@@ -240,8 +240,49 @@ export function buildSea(scene) {
     uShallow: { value: new THREE.Color("#43c6ca") },
     uDeep: { value: new THREE.Color("#188bb2") },
   };
-  const geometry = new THREE.PlaneGeometry(520, 620, 96, 112);
-  geometry.rotateX(-Math.PI / 2);
+  // Non-uniform grid: dense where fish and boats are inspected; broad cells
+  // extend offshore beyond the horizon. The sea stays on the east map edge.
+  const xs = [
+    ...Array.from({ length: 35 }, (_, i) => 66 + i * 3),
+    220,
+    400,
+    700,
+    1000,
+  ];
+  const zs = [
+    -1000,
+    -600,
+    -300,
+    -180,
+    -130,
+    ...Array.from({ length: 70 }, (_, i) => -115 + i * 3),
+    180,
+    300,
+    600,
+    1000,
+  ];
+  const vertices = [],
+    indices = [];
+  for (const z of zs) for (const x of xs) vertices.push(x, 0, z);
+  for (let j = 0; j < zs.length - 1; j++)
+    for (let i = 0; i < xs.length - 1; i++) {
+      const a = j * xs.length + i;
+      indices.push(
+        a,
+        a + xs.length,
+        a + 1,
+        a + 1,
+        a + xs.length,
+        a + xs.length + 1,
+      );
+    }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(vertices, 3),
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   const material = new THREE.ShaderMaterial({
     uniforms,
     transparent: true,
@@ -250,22 +291,22 @@ export function buildSea(scene) {
     vertexShader: `uniform float uTime;varying vec3 vWorld;
  void main(){vec3 p=position;p.y+=sin(p.x*.30+p.z*.18+uTime*.8)*.065+sin(p.z*.62-p.x*.11+uTime*1.2)*.025;vec4 w=modelMatrix*vec4(p,1.);vWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
     fragmentShader: `uniform float uTime;uniform float uShore;uniform vec3 uShallow;uniform vec3 uDeep;varying vec3 vWorld;
- void main(){float shore=clamp((vWorld.x-uShore)/29.,0.,1.);vec3 c=mix(uShallow,uDeep,shore);
+ void main(){float shore=clamp(max(vWorld.x-uShore,max(-vWorld.z-100.,vWorld.z-55.))/29.,0.,1.);vec3 c=mix(uShallow,uDeep,shore);
  float a=sin(vWorld.x*6.8+sin(vWorld.z*3.6+uTime)*1.7+uTime*.5);float b=sin(vWorld.z*8.4+sin(vWorld.x*2.4-uTime)*1.4);float lace=pow(clamp(1.-abs(a+b)*.7,0.,1.),15.);
- c+=vec3(.055,.09,.07)*lace*(1.-shore*.95);float crest=pow(max(0.,sin(vWorld.x*.7+vWorld.z*1.2+uTime)*sin(vWorld.z*.7-uTime*.5)),22.);c+=vec3(.30,.40,.36)*crest;
- float foam=(1.-smoothstep(.3,1.8,vWorld.x-uShore+.22*sin(vWorld.z*2.-uTime)))*(.5+.5*sin(vWorld.z*1.5+uTime));c=mix(c,vec3(.82,.97,.91),foam*.65);
- float haze=smoothstep(120.,260.,distance(cameraPosition,vWorld));c=mix(c,vec3(.42,.71,.80),haze*.55);gl_FragColor=vec4(c,.94);
+ c+=vec3(.055,.09,.07)*lace*(1.-shore*.95);float crest=pow(max(0.,sin(vWorld.x*.7+vWorld.z*1.2+uTime)*sin(vWorld.z*.7-uTime*.5)),22.);c+=vec3(.15,.25,.23)*crest;
+ float foam=(1.-smoothstep(.3,1.8,abs(vWorld.x-uShore)+.22*sin(vWorld.z*2.-uTime)))*(.5+.5*sin(vWorld.z*1.5+uTime));c=mix(c,vec3(.82,.97,.91),foam*.65*step(-100.,vWorld.z)*step(vWorld.z,55.));
+ float haze=smoothstep(120.,260.,distance(cameraPosition,vWorld));c=mix(c,vec3(.028,.32,.62),haze*.85);float horizon=1.-smoothstep(170.,320.,distance(cameraPosition,vWorld));gl_FragColor=vec4(c,mix(.56,.99,shore)*horizon);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`,
   });
   material.forceSinglePass = true;
-  const water = mesh(scene, geometry, material, 326, P.waterY, -30);
+  const water = mesh(scene, geometry, material, 0, P.waterY, 0);
   water.castShadow = false;
   water.receiveShadow = false;
   water.userData.dynamic = true;
   water.name = "coastal-water";
-  box(scene, 326, -3.8, -30, 520, 0.2, 620, "#70aaa4", 0.03);
+  box(scene, 116, -3.8, -20, 100, 0.2, 220, "#70aaa4", 0.03);
   for (let i = 0; i < 19; i++) {
     const z = -57 + i * 5.1;
     if (Math.abs(z - 12) < 5) continue;

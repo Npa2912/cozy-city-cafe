@@ -28,10 +28,10 @@ if (renderer) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.03;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#269add");
-  scene.fog = new THREE.Fog("#b9d5df", 95, 280);
+  scene.fog = new THREE.Fog("#b9d5df", 170, 450);
   const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 360);
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = true;
@@ -41,8 +41,8 @@ if (renderer) {
   const pov = new PointerLockControls(camera, canvas);
   const keys = new Set();
   const views = CAMERA_VIEWS;
-  let selectedView = "expanded";
-  let activeFov = views.expanded.fov;
+  let selectedView = "city";
+  let activeFov = views.city.fov;
   const orbitButton = document.querySelector("#orbit");
   const povButton = document.querySelector("#pov");
   const help = document.querySelector("#help");
@@ -57,7 +57,7 @@ if (renderer) {
   }
   let needsRender = true;
   let returnToReference = false;
-  function reset(view = "expanded") {
+  function reset(view = "city") {
     if (document.pointerLockElement === canvas) {
       returnToReference = true;
       pov.unlock();
@@ -66,7 +66,7 @@ if (renderer) {
     orbit.enableDamping = false;
     orbit.update();
     setMode(false);
-    selectedView = typeof view === "string" ? view : "expanded";
+    selectedView = typeof view === "string" ? view : "city";
     const preset = views[selectedView];
     camera.position.fromArray(preset.position);
     orbit.target.fromArray(preset.target);
@@ -79,8 +79,8 @@ if (renderer) {
     needsRender = true;
   }
   reset();
-  scene.add(new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.65));
-  const sun = new THREE.DirectionalLight(0xffedc4, 3.8);
+  scene.add(new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.2));
+  const sun = new THREE.DirectionalLight(0xffedc4, 3.5);
   sun.position.set(52, 35, 3);
   sun.target.position.set(30, 0, -15);
   scene.add(sun.target);
@@ -205,7 +205,7 @@ if (renderer) {
       expansion.update(lifeDelta, time);
     }
     shadowTime += lifeDelta;
-    if (playing && shadowTime > 0.033) {
+    if (playing && shadowTime > 0.12) {
       renderer.shadowMap.needsUpdate = true;
       shadowTime = 0;
     }
@@ -232,6 +232,7 @@ if (renderer) {
     .compileAsync(scene, camera)
     .then(() => {
       renderer.render(scene, camera);
+      needsRender = false;
       canvas.dataset.ready = "true";
       canvas.setAttribute("aria-busy", "false");
       status.textContent = "ANTELEO · Thành phố, biển & câu cá";

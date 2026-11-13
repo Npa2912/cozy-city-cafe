@@ -1,5 +1,8 @@
 // The four established core views are preserved exactly; new views are additive.
 export const CAMERA_VIEWS = {
+  city: { position: [101, 60, 79], target: [22, 7, -8], fov: 36 },
+  residential: { position: [42, 14, -10], target: [-3.8, 5, -5], fov: 52 },
+  marine: { position: [78, 4, 24], target: [72, -0.6, 19], fov: 52 },
   expanded: { position: [95, 32, 30], target: [28, 5, -12], fov: 38 },
   overview: { position: [13.8, 11.8, 19.5], target: [-4, 4.8, -10], fov: 57 },
   flowers: { position: [12, 3.2, 14.5], target: [-4, 4.6, -8], fov: 60 },
@@ -12,6 +15,9 @@ export const CAMERA_VIEWS = {
 };
 
 export const WALK_STARTS = {
+  city: { position: [11.6, 1.9, 20], target: [-3.8, 2, -4] },
+  residential: { position: [45.5, 1.9, 23], target: [30, 2, -12] },
+  marine: { position: [69, 1.9, 12], target: [73, -0.5, 19] },
   expanded: { position: [11.6, 1.9, 20], target: [-3.8, 2, -4] },
   coast: { position: [62, 1.9, 22], target: [66, 1.9, -10] },
   fishing: { position: [76, 1.9, 12], target: [83, 1.8, 14.3] },

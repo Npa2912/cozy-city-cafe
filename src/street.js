@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
-import roundedFont from "three/examples/fonts/helvetiker_bold.typeface.json";
+import roundedFont from "three/examples/fonts/helvetiker_bold.typeface.json" with { type: "json" };
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 
 // All architecture is real geometry; canvas textures are used only for surface artwork.
@@ -403,7 +403,7 @@ function tiledRoof(parent, x, y, z, w, d) {
     bevelEnabled: false,
     curveSegments: 24,
   });
-  const roof = mesh(parent, geom, "#ccaa7e", x - w / 2, y, z);
+  const roof = mesh(parent, geom, "#d29a71", x - w / 2, y, z);
   roof.rotation.y = Math.PI / 2;
   roof.position.set(x - w / 2, y, z);
   for (let i = 0; i <= Math.ceil(w / 0.48); i++) {
@@ -418,7 +418,7 @@ function tiledRoof(parent, x, y, z, w, d) {
         [xx, y + 0.06, z - d / 2],
       ],
       0.09,
-      "#9c805c",
+      "#c18861",
     );
   }
   box(parent, x, y - 0.12, z + d / 2, w + 0.45, 0.22, 0.23, "#d4bc8e");
@@ -516,7 +516,8 @@ function ground(scene) {
   });
   asphalt.wrapS = asphalt.wrapT = THREE.RepeatWrapping;
   asphalt.repeat.set(6, 85);
-  box(scene, 4, -0.11, -30, 9, 0.18, 135, mat("#626363", { map: asphalt }));
+  const roadMaterial = mat("#626363", { map: asphalt });
+  box(scene, 4, -0.11, -30, 9, 0.18, 135, roadMaterial);
   const pavement = paving();
   pavement.wrapS = pavement.wrapT = THREE.RepeatWrapping;
   pavement.repeat.set(6, 23);
@@ -566,7 +567,9 @@ function ground(scene) {
     mat("#ffffff", { map: sidewalk }),
     0.01,
   );
+  return roadMaterial;
 }
+
 function flowerLogo(parent, x, y, z, size = 1) {
   cylinder(parent, x, y, z, size, size, 0.18, "#baa575").rotation.x =
     Math.PI / 2;
@@ -1394,7 +1397,7 @@ function rightForeground(scene) {
 }
 export function buildStreet(scene) {
   seed = 7381;
-  ground(scene);
+  const roadMaterial = ground(scene);
   // Street axis extends from the foreground to the market at the vanishing point.
   tower(scene, -14, -9, 7, 21, "#e6e0d9");
   tower(scene, -10, -17, 6.5, 16, "#e1c35c", 2);
@@ -1493,21 +1496,34 @@ export function buildStreet(scene) {
       gradient.addColorStop(1, "#c5e2e9");
       c.fillStyle = gradient;
       c.fillRect(0, 0, W, H);
-      for (let cloud = 0; cloud < 24; cloud++) {
+      for (let cloud = 0; cloud < 26; cloud++) {
         const xx = random() * W,
-          yy = H * (0.29 + random() * 0.22),
-          size = 30 + random() * 55;
-        for (let p = 0; p < 22; p++) {
-          const x = xx + (random() - 0.5) * size * 4,
-            y = yy + (random() - 0.5) * size * 0.9,
-            r = size * (0.3 + random() * 0.6);
-          const glow = c.createRadialGradient(x, y, 0, x, y, r);
-          glow.addColorStop(0, "rgba(255,255,255,.8)");
-          glow.addColorStop(0.65, "rgba(255,255,255,.62)");
-          glow.addColorStop(1, "rgba(255,255,255,0)");
-          c.fillStyle = glow;
-          c.fillRect(x - r, y - r, r * 2, r * 2);
+          yy = H * (0.31 + random() * 0.19),
+          size = 22 + random() * 29;
+        // Fill the union once, so overlapping lobes form one cloud rather
+        // than a row of individually outlined circles.
+        c.beginPath();
+        for (let p = 0; p < 13; p++) {
+          const t = p / 12,
+            x = xx + (t - 0.5) * size * 3.5;
+          const y =
+            yy -
+            Math.sin(t * Math.PI) * size * 0.3 +
+            (random() - 0.5) * size * 0.22;
+          const r =
+            size * (0.3 + Math.sin(t * Math.PI) * 0.45 + random() * 0.2);
+          c.moveTo(x + r, y);
+          c.arc(x, y, r, 0, Math.PI * 2);
         }
+        const cloudLight = c.createLinearGradient(0, yy - size, 0, yy + size);
+        cloudLight.addColorStop(0, "#ffffff");
+        cloudLight.addColorStop(0.45, "#fcfeff");
+        cloudLight.addColorStop(1, "#c9e2f4");
+        c.fillStyle = cloudLight;
+        c.shadowColor = "rgba(245,252,255,.55)";
+        c.shadowBlur = 7;
+        c.fill();
+        c.shadowBlur = 0;
       }
     },
     4096,
@@ -1515,7 +1531,7 @@ export function buildStreet(scene) {
   );
   sky.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = sky;
-  return { cafe, florist };
+  return { cafe, florist, roadMaterial };
 }
 
 export {

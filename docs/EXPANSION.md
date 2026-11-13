@@ -1,5 +1,8 @@
 # Connected city and coastal expansion
 
+This records the preceding expansion stage. See [the latest reference refinement](REFERENCE-REFINEMENT.md)
+for the subsequently revised residential blocks, roads, fish and camera options.
+
 The original street is still the core of the same scene. `buildStreet`,
 `refineStreet` and the original animated street life still run; the additive
 `extendCity` stage runs afterwards. No original building front or core camera

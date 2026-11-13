@@ -9,6 +9,12 @@ The approved core is retained and extended by a connected commercial district,
 seaside promenade, fishing pier and a rear café room with a modeled POS station.
 See [the expansion guide](docs/EXPANSION.md) for layout and inspection cameras.
 
+The latest [reference refinement](docs/REFERENCE-REFINEMENT.md) replaces repeated
+expansion houses with varied blocks, adds connected streets and a fountain
+plaza, and brings the sea to life with swimming and occasionally jumping fish.
+[Latest city render](docs/reference-city.png) · [Residential view](docs/reference-residential.png) ·
+[Fish near the pier](docs/reference-fish.png)
+
 [Expanded city](docs/expanded-city.png) · [Retained core](docs/core-retained.png) · [Seaside](docs/seaside.png) ·
 [Fishing pier](docs/fishing-pier.png) · [Rear room](docs/cafe-annex.png) ·
 [POS](docs/pos-terminal.png)
@@ -40,8 +46,8 @@ model downloads or external asset requests are required at runtime.
   Escape releases pointer lock. This is a viewing camera, not a collision-based
   player or gameplay system.
 - **Reset to Reference View:** returns to the expanded reference view.
-- **View selector:** expanded city, the original four core views, rear café room,
-  POS, seaside and fishing pier.
+- **View selector:** 12 options including the new city, residential and fish
+  views; all nine previous presets remain available.
 - **Tạm dừng / Tiếp tục:** pause or resume the moving scene for inspection.
 - **Chụp ảnh:** downloads a PNG of the viewport without interface overlays.
 
@@ -107,18 +113,19 @@ assets. Exact illustration/lettering, fine fabric and hair detail, cloud shapes,
 some skyline proportions and individual flower arrangements still differ.
 The supplied images also have different lens and elevation choices; the presets
 are fitted visually rather than photographically calibrated. No measured
-"90% similarity" score is claimed. Neighboring stores use illustrated window
+"95% similarity" score is claimed. Neighboring stores use illustrated window
 contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test` passes 12 checks covering full van circuits, bounded stops and speed, route continuity,
+`npm test` passes 17 checks covering full van circuits, bounded stops and speed, route continuity,
 pedestrian lane separation and turn easing, and preservation of moving objects
 by static batching. Expansion checks cover rear-room clearance, POS placement,
 shore connectivity, safe POV starts, retained camera presets and foliage LOD.
 `npm run build` produces the Vercel output. Vite emits a
-non-failing bundle-size advisory (approximately 705 kB minified / 201 kB gzip).
-Production browser checks passed for nine view options, orbit/reset, POV/WASD,
-Escape, PNG export, moving actors and portrait layout, with no JavaScript errors.
-Six expansion/core screenshots were also rendered with no shader errors.
+non-failing bundle-size advisory (approximately 717 kB minified / 206 kB gzip).
+The latest production browser checks passed for 12 view options, reset,
+POV/WASD/Escape, PNG export, fish animation and portrait layout, with no
+JavaScript or shader errors. The preceding stage also verified orbit/reset.
+Latest screenshots and detailed evidence are in the reference refinement guide.
 No Vercel deployment or environment publication was performed.
