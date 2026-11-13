@@ -95,6 +95,7 @@ function pos(cafe) {
     512,
     288,
   );
+  cafe.userData.posDisplays = { order, customer };
   mesh(
     screen,
     new THREE.PlaneGeometry(0.52, 0.3),

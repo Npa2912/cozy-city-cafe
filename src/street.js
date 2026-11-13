@@ -606,6 +606,57 @@ function flowerLogo(parent, x, y, z, size = 1) {
     "#efc94c",
   );
 }
+function giantMilkTea(scene) {
+  const g = group(scene, 2, 8.1, -2);
+  g.name = "anteleo-milk-tea-mascot";
+  cylinder(g, 0, 1.78, 0, 1.2, 1.0, 2.2, "#cba77a", 64);
+  cylinder(g, 0, 0.12, 0, 0.96, 0.92, 0.24, "#74977b", 64);
+  for (let i = 0; i < 20; i++) {
+    const a = i * 2.399,
+      r = 0.5 + (i % 3) * 0.16;
+    sphere(
+      g,
+      Math.cos(a) * r,
+      0.28 + (i % 3) * 0.18,
+      Math.sin(a) * r,
+      0.17,
+      0.17,
+      0.17,
+      "#5d4439",
+    );
+  }
+  cylinder(
+    g,
+    0,
+    1.45,
+    0,
+    1.22,
+    0.96,
+    2.9,
+    mat("#e2e6cf", { transparent: true, opacity: 0.23, roughness: 0.22 }),
+    64,
+  );
+  cylinder(g, 0, 2.96, 0, 1.3, 1.3, 0.18, "#92b695", 64);
+  sphere(g, 0, 3.03, 0, 1.29, 0.2, 1.29, "#cde0b2");
+  const straw = group(g, 0.3, 3.1, 0);
+  straw.rotation.z = -0.2;
+  cylinder(straw, 0, 0.85, 0, 0.12, 0.12, 1.9, "#b58eab", 32);
+  for (const x of [-0.32, 0.32]) {
+    sphere(g, x, 1.68, 1.12, 0.075, 0.1, 0.035, "#4c453b");
+    sphere(g, x - 0.02, 1.72, 1.15, 0.024, 0.027, 0.012, "#fff3d5");
+    sphere(g, x * 1.65, 1.48, 1.1, 0.13, 0.065, 0.026, "#d79691");
+  }
+  tube(
+    g,
+    [
+      [-0.16, 1.43, 1.16],
+      [0, 1.35, 1.19],
+      [0.16, 1.43, 1.16],
+    ],
+    0.028,
+    "#735047",
+  );
+}
 function wateringCan(scene) {
   const g = group(scene, 2, 8, -2, -0.1);
   g.scale.set(1.2, 1.55, 1.55);
@@ -666,22 +717,21 @@ function shop(scene) {
   box(g, 0, 5.65, -2.5, 13, 0.35, 5.6, palette.cream, 0.15);
   box(g, 0, 0.28, -2.1, 12.4, 0.12, 5.5, "#b19c76");
   box(g, 0, 4.9, -4.8, 11, 0.7, 0.05, "#a6b9a0");
-  // Broad continuous glazing with visible shelves, plants, counter and pendant lamps.
-  box(
-    g,
-    0,
-    2.8,
-    0.55,
-    11.8,
-    4.8,
-    0.12,
-    mat("#e3e8d5", {
-      transparent: true,
-      opacity: 0.1,
-      roughness: 0.18,
-      metalness: 0,
-    }),
-  );
+  // Fixed glazing leaves the operable central portal physically clear.
+  for (const [x, w] of [
+    [-3.9, 4],
+    [3.6, 4.6],
+  ])
+    box(
+      g,
+      x,
+      2.8,
+      0.55,
+      w,
+      4.8,
+      0.12,
+      mat("#e3e8d5", { transparent: true, opacity: 0.1, roughness: 0.18 }),
+    );
   box(g, -3.2, 0.72, -2.8, 5.0, 0.75, 1.1, "#a37c51");
   for (let j = 0; j < 3; j++) {
     box(g, -3.6, 1.6 + j * 0.62, -4.55, 4.2, 0.1, 0.45, "#694f36");
@@ -713,19 +763,38 @@ function shop(scene) {
     0.32,
     0.78,
   );
-  arch(
+  for (const [x, w] of [
+    [-1.54, 0.76],
+    [0.94, 0.76],
+  ])
+    box(
+      g,
+      x,
+      1.95,
+      1,
+      w,
+      3.2,
+      0.04,
+      mat("#c1ded9", { transparent: true, opacity: 0.14 }),
+      0.04,
+    );
+  box(
     g,
     -0.3,
-    0.47,
+    4.28,
     1,
     3.25,
-    4.76,
+    0.85,
     0.04,
-    mat("#e5e6d1", { transparent: true, opacity: 0.1, roughness: 0.18 }),
+    mat("#c1ded9", { transparent: true, opacity: 0.12 }),
   );
-  box(g, -0.3, 2.5, 1.1, 0.14, 4.3, 0.11, palette.wood, 0.025);
   box(g, -0.3, 3.75, 1.1, 3.2, 0.14, 0.12, palette.wood, 0.025);
-  const door = group(g, 1.1, 0.3, 1.15, -0.2);
+  box(g, -0.3, 4.25, 1.1, 0.12, 0.9, 0.1, palette.wood, 0.025);
+  const hinge = group(g, -1.15, 0.34, 1.04);
+  hinge.name = "cafe-door-hinge";
+  hinge.userData.dynamic = true;
+  g.userData.door = hinge;
+  const door = group(hinge, 0.85, 0, 0);
   for (const xx of [-0.8, 0.8])
     box(door, xx, 1.8, 0, 0.14, 3.6, 0.18, palette.wood, 0.06);
   for (const yy of [0.08, 1.2, 2.3, 3.52])
@@ -811,7 +880,11 @@ function shop(scene) {
   }
   box(g, 4.9, 0.74, 1.45, 3.7, 0.17, 0.8, "#70503a");
   for (const x of [3.5, 6.2]) box(g, x, 0.42, 1.4, 0.12, 0.6, 0.12, "#4a4440");
-  for (let i = 0; i < 8; i++) pot(g, -5.4 + random() * 10, 0.35, -0.2, 0.24);
+  for (let i = 0; i < 8; i++) {
+    let x = -5.4 + random() * 10;
+    if (Math.abs(x) < 2) x = x < 0 ? -2.8 : 2.8;
+    pot(g, x, 0.35, -0.2, 0.24);
+  }
   box(g, -1, 0.29, 1.7, 3, 0.035, 1, "#c495a8", 0.2);
   for (let i = 0; i < 11; i++) {
     foliage(g, -6.6 + i * 0.48, 6.4 + Math.sin(i * 0.8) * 0.25, -0.8, 0.6, 24);
@@ -839,7 +912,7 @@ function shop(scene) {
   box(g, 2, 8.0, -2.2, 4.6, 0.16, 4.0, palette.trim, 0.08);
   for (let i = 0; i < 5; i++)
     box(g, 4.23, 6.45 + i * 0.19, -2.2, 0.035, 0.07, 1.6, "#b4a582", 0.015);
-  wateringCan(g);
+  giantMilkTea(g);
   return g;
 }
 function vending(scene, x, z) {

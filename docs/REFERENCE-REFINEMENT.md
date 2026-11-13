@@ -1,5 +1,8 @@
 # Reference refinement · connected city
 
+Archived visual-stage notes. The subsequent [playable café](GAMEPLAY.md) adds
+the working door, collision, customer service and in-game POS.
+
 This pass edits the previous city directly. ANTELEO, its rear room/POS, the
 original street, florist, skyline, van and pier remain in the same scene.
 All nine earlier camera presets remain available at their previous positions.

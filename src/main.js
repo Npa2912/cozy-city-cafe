@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import "./style.css";
+import { createCafeGame } from "./game/runtime.js";
 import { buildStreet } from "./street.js";
 import { refineStreet } from "./refinement.js";
 import { buildLife } from "./life.js";
@@ -41,13 +42,16 @@ if (renderer) {
   const pov = new PointerLockControls(camera, canvas);
   const keys = new Set();
   const views = CAMERA_VIEWS;
-  let selectedView = "city";
-  let activeFov = views.city.fov;
+  const requestedView = new URLSearchParams(location.search).get("view");
+  let selectedView = Object.hasOwn(views, requestedView)
+    ? requestedView
+    : "city";
+  let activeFov = views[selectedView].fov;
   const orbitButton = document.querySelector("#orbit");
   const povButton = document.querySelector("#pov");
   const help = document.querySelector("#help");
   function setMode(walking) {
-    orbit.enabled = !walking;
+    orbit.enabled = !walking && !game?.active;
     orbitButton.setAttribute("aria-pressed", String(!walking));
     povButton.setAttribute("aria-pressed", String(walking));
     help.textContent = walking
@@ -55,6 +59,7 @@ if (renderer) {
       : "Kéo để xoay · Cuộn để thu phóng · Chuột phải để dịch chuyển";
     keys.clear();
   }
+  let game;
   let needsRender = true;
   let returnToReference = false;
   function reset(view = "city") {
@@ -63,6 +68,7 @@ if (renderer) {
       pov.unlock();
       return;
     }
+    if (game?.active) game.stop();
     orbit.enableDamping = false;
     orbit.update();
     setMode(false);
@@ -78,7 +84,7 @@ if (renderer) {
     orbit.enableDamping = true;
     needsRender = true;
   }
-  reset();
+  reset(selectedView);
   scene.add(new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.2));
   const sun = new THREE.DirectionalLight(0xffedc4, 3.5);
   sun.position.set(52, 35, 3);
@@ -101,6 +107,19 @@ if (renderer) {
   expansion.update(0, 0);
   const life = buildLife(scene, district);
   life.update(0, 0);
+  game = createCafeGame({
+    scene,
+    cafe: district.cafe,
+    camera,
+    pov,
+    orbit,
+    canvas,
+    onDirty: () => {
+      needsRender = true;
+    },
+  });
+  if (import.meta.env.DEV && new URLSearchParams(location.search).has("test"))
+    window.__cafeTest = { game, camera, pov };
   scene.traverse((object) => {
     if (
       object.isMesh &&
@@ -116,8 +135,16 @@ if (renderer) {
   document
     .querySelector("#view")
     .addEventListener("change", (event) => reset(event.target.value));
-  orbitButton.addEventListener("click", () => pov.unlock());
+  orbitButton.addEventListener("click", () => {
+    game.stop();
+    pov.unlock();
+    setMode(false);
+  });
   povButton.addEventListener("click", () => {
+    if (game.active) {
+      pov.lock();
+      return;
+    }
     const start = WALK_STARTS[selectedView];
     if (start) {
       camera.position.fromArray(start.position);
@@ -129,13 +156,19 @@ if (renderer) {
     pov.lock();
   });
   pov.addEventListener("lock", () => {
-    camera.position.y = 1.9;
+    game.movePlayer(0, 0);
     setMode(true);
   });
   document.addEventListener("pointerlockerror", () => {
     status.textContent = "Cho phép khóa chuột để dùng POV WASD.";
   });
   pov.addEventListener("unlock", () => {
+    if (game?.active) {
+      keys.clear();
+      orbit.enabled = false;
+      needsRender = true;
+      return;
+    }
     if (returnToReference) {
       returnToReference = false;
       reset();
@@ -205,20 +238,34 @@ if (renderer) {
       expansion.update(lifeDelta, time);
     }
     shadowTime += lifeDelta;
-    if (playing && shadowTime > 0.12) {
+    if ((playing || game.active) && shadowTime > 0.12) {
       renderer.shadowMap.needsUpdate = true;
       shadowTime = 0;
     }
-    if (pov.isLocked) {
+    game.update(lifeDelta);
+    if (pov.isLocked && !game.modal) {
       const forward = Number(keys.has("KeyW")) - Number(keys.has("KeyS"));
       const right = Number(keys.has("KeyD")) - Number(keys.has("KeyA"));
       const speed = (5 * delta) / (Math.hypot(forward, right) || 1);
-      pov.moveForward(forward * speed);
-      pov.moveRight(right * speed);
-      camera.position.y = 1.9;
+      const direction = camera.getWorldDirection(new THREE.Vector3());
+      direction.y = 0;
+      direction.normalize();
+      const side = new THREE.Vector3()
+        .crossVectors(direction, camera.up)
+        .normalize();
+      game.movePlayer(
+        direction.x * forward * speed + side.x * right * speed,
+        direction.z * forward * speed + side.z * right * speed,
+      );
     }
-    const orbitChanged = !pov.isLocked && orbit.update();
-    if (needsRender || pov.isLocked || orbitChanged || playing) {
+    const orbitChanged = orbit.enabled && !pov.isLocked && orbit.update();
+    if (
+      needsRender ||
+      pov.isLocked ||
+      orbitChanged ||
+      playing ||
+      (game.active && lifeDelta > 0)
+    ) {
       updateFoliageLOD(camera);
       renderer.render(scene, camera);
       needsRender = false;

@@ -1,18 +1,32 @@
-# ANTELEO · City & Coast Preview
+# ANTELEO · Café Gameplay & City Preview
 
-A real, explorable Vite + Three.js café and flower-shop street, refined from the
-three supplied reference views. The existing project and reference landmarks
-are retained: curved cream café, green watering-can roof sculpture, flower
-emblem, purple vending machine, barber pole and pastel skyline.
+A playable single-player café prototype built directly into the existing
+Vite + Three.js city. **Milestones 1–2** provide a physical door, capsule
+collision, modeled customers, four recipes, station interactions, POS, money,
+EXP, quests and versioned local saves. **Milestone 3** (purchased furniture,
+Edit Mode and upgrade-based expansion) is not implemented.
+
+Click **Chơi quán**, use **E** at the door/stations, **O** to toggle admission,
+**H** for recipes and **J** for quests. WASD/mouse move and look; Escape frees
+the cursor. [Play guide and scope](docs/GAMEPLAY.md).
+
+[Recipes](docs/gameplay-recipes.png) · [Customer at a table](docs/gameplay-customer.png) ·
+[Working POS](docs/gameplay-pos.png) · [New milk-tea mascot](docs/gameplay-mascot.png)
+
+The cream café, flower emblem, purple vending machine, barber pole, city, coast
+and all 12 camera presets are retained. The rooftop watering can is replaced
+by the requested milk-tea mascot; the entrance aisle and counter are cleared.
+
+Earlier visual studies (before gameplay):
 
 The approved core is retained and extended by a connected commercial district,
 seaside promenade, fishing pier and a rear café room with a modeled POS station.
 See [the expansion guide](docs/EXPANSION.md) for layout and inspection cameras.
 
-The latest [reference refinement](docs/REFERENCE-REFINEMENT.md) replaces repeated
+The preceding [reference refinement](docs/REFERENCE-REFINEMENT.md) replaces repeated
 expansion houses with varied blocks, adds connected streets and a fountain
 plaza, and brings the sea to life with swimming and occasionally jumping fish.
-[Latest city render](docs/reference-city.png) · [Residential view](docs/reference-residential.png) ·
+[City study](docs/reference-city.png) · [Residential view](docs/reference-residential.png) ·
 [Fish near the pier](docs/reference-fish.png)
 
 [Expanded city](docs/expanded-city.png) · [Retained core](docs/core-retained.png) · [Seaside](docs/seaside.png) ·
@@ -43,8 +57,8 @@ model downloads or external asset requests are required at runtime.
 
 - **Free Camera:** drag to orbit, wheel to zoom, right-drag to pan.
 - **POV WASD:** click the walking button, move with WASD and look with the mouse.
-  Escape releases pointer lock. This is a viewing camera, not a collision-based
-  player or gameplay system.
+  Escape releases pointer lock. POV now uses capsule collision; Free Camera
+  remains available for unrestricted visual inspection.
 - **Reset to Reference View:** returns to the expanded reference view.
 - **View selector:** 12 options including the new city, residential and fish
   views; all nine previous presets remain available.
@@ -53,7 +67,8 @@ model downloads or external asset requests are required at runtime.
 
 The van and walking routes start automatically. The browser reduced-motion
 preference reduces character gestures, while the explicit pause button stops
-the scene for inspection. Camera controls work in either state.
+the street environment for inspection. The active café shift continues
+independently. Camera controls work in either state.
 
 ## Exterior and expanded map
 
@@ -72,8 +87,8 @@ side and rear window bays as well as their front façades.
 The café includes an espresso machine with gauges and steam wands, grinder,
 bubble-tea sealer, blender, ingredient jars, cups with straws and pearls, a
 pastry case, menu prices, shelving, framed wall decorations, pendant lights,
-tables and curved-back chairs. The raised roof supports its watering-can
-sculpture; the air-conditioning unit is attached to a building wall.
+tables and curved-back chairs. The raised roof supports the milk-tea
+mascot; the air-conditioning unit is attached to a building wall.
 
 ## Moving van and pedestrians
 
@@ -99,6 +114,8 @@ swings. Passing routes are separated; none of the walkers enters the road.
 - `src/traffic.js`, `src/pedestrians.js`: deterministic movement schedules.
 - `src/batch-static.js`: static geometry/material batching in spatial cells; explicitly excludes
   moving hierarchies. Flowers and foliage use instancing.
+- `src/game/`: customer FSM, orders, recipe validator, preparation, payments,
+  economy, quests, collision/navigation, saves, UI and scene bindings.
 - `src/main.js`: camera presets, controls, sun and warm interior lights,
   dynamic shadow refresh, pause and PNG export.
 
@@ -118,14 +135,15 @@ contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test` passes 17 checks covering full van circuits, bounded stops and speed, route continuity,
-pedestrian lane separation and turn easing, and preservation of moving objects
-by static batching. Expansion checks cover rear-room clearance, POS placement,
-shore connectivity, safe POV starts, retained camera presets and foliage LOD.
-`npm run build` produces the Vercel output. Vite emits a
-non-failing bundle-size advisory (approximately 717 kB minified / 206 kB gzip).
-The latest production browser checks passed for 12 view options, reset,
-POV/WASD/Escape, PNG export, fish animation and portrait layout, with no
-JavaScript or shader errors. The preceding stage also verified orbit/reset.
-Latest screenshots and detailed evidence are in the reference refinement guide.
-No Vercel deployment or environment publication was performed.
+`npm test` passes **33 checks** covering café lifecycle rules, all four recipes,
+wrong drinks/costs, payment/reward deduplication, save/load, capsule contacts and
+A* paths, plus the existing city/traffic/foliage checks. `npm run build` succeeds
+with a non-failing bundle advisory (approximately 753 kB / 222 kB gzip).
+
+The real-geometry browser test operates the door, receives an order, crafts at
+the actual stations, serves a modeled customer, waits for drinking, pays once,
+walks the customer outside, cleans the seat and writes the save. Its accounting
+result is 25 xu revenue, 3 xu ingredient cost and a 122 xu balance. Detailed
+validation and remaining work are recorded in the play guide.
+
+No Vercel deployment, environment publication or merge to main was performed.

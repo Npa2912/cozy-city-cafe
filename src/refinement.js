@@ -458,12 +458,13 @@ function cafeInterior(cafe) {
   box(cafe, 3.95, 2.75, -4.83, 3.9, 4.7, 0.08, warm);
   box(cafe, 1.4, 4.025, -4.83, 1.2, 2.15, 0.08, warm);
   const equipment = group(cafe, 0, -0.6, 0.7);
+  equipment.name = "cafe-equipment";
   box(equipment, -3.3, 1.75, -3.5, 5.4, 0.13, 1.3, "#e9d5b0", 0.07);
   for (let j = 0; j < 3; j++) {
-    for (let i = 0; i < 10; i++)
+    for (let i = 0; i < 4; i++)
       cup(
         cafe,
-        -5.2 + i * 0.34,
+        -5.2 + i * 0.74,
         1.66 + j * 0.61,
         -4.46,
         ["#e9ddb5", "#a7cab0", "#d6adbd"][i % 3],
@@ -536,7 +537,7 @@ function cafeInterior(cafe) {
     );
     gauge.rotation.x = Math.PI / 2;
     rod(equipment, [xx, 2.12, -3.2], [xx, 2.03, -2.98], 0.03, "#425452");
-    cup(equipment, xx, 1.82, -3.16);
+    // The gameplay cup is placed under this spout while extraction runs.
   }
   box(equipment, -3.7, 1.8, -3.16, 1.03, 0.06, 0.3, "#66746b", 0.025);
   for (let i = 0; i < 9; i++)
@@ -562,10 +563,11 @@ function cafeInterior(cafe) {
     0.19,
     mat("#bca58b", { transparent: true, opacity: 0.65 }),
   );
+  const pastry = group(cafe, 4.4, 1.2, -1.0);
   // A curved glass pastry display with individually modeled buns.
-  box(equipment, -1.0, 1.83, -3.45, 0.75, 0.08, 0.65, "#b29b6b", 0.05);
+  box(pastry, -1.0, 1.83, -3.45, 0.75, 0.08, 0.65, "#b29b6b", 0.05);
   box(
-    equipment,
+    pastry,
     -1.0,
     2.06,
     -3.45,
@@ -577,7 +579,7 @@ function cafeInterior(cafe) {
   );
   for (let i = 0; i < 4; i++) {
     sphere(
-      equipment,
+      pastry,
       -1.23 + (i % 2) * 0.35,
       1.96,
       -3.6 + Math.floor(i / 2) * 0.3,
@@ -587,7 +589,7 @@ function cafeInterior(cafe) {
       "#d9af6a",
     );
     tube(
-      equipment,
+      pastry,
       [
         [-1.3 + (i % 2) * 0.35, 2.02, -3.6 + Math.floor(i / 2) * 0.3],
         [-1.23 + (i % 2) * 0.35, 2.05, -3.6 + Math.floor(i / 2) * 0.3],
@@ -663,12 +665,7 @@ function cafeInterior(cafe) {
       "#eeddb7",
     );
   }
-  table(cafe, 3.5, 0.34, -3, 0.58);
-  chair(cafe, 2.65, 0.34, -3, Math.PI / 2);
-  chair(cafe, 4.35, 0.34, -3, -Math.PI / 2);
-  table(cafe, 0.5, 0.34, -3.3, 0.55);
-  chair(cafe, 0.0, 0.34, -4.15, 0);
-  chair(cafe, -0.3, 0.34, -3.2, Math.PI / 2);
+  // Seating is now laid out and registered by the gameplay world module.
   for (const xx of [-4, -1, 2, 4.6]) {
     rod(cafe, [xx, 5.4, -2.1], [xx, 4.38, -2.1], 0.015, "#777054");
     lantern(cafe, xx, 4.12, -2.1, 1.25);
