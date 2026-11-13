@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23548672%27/%3E%3Ctext x=%2716%27 y=%2724%27 text-anchor=%27middle%27 font-size=%2724%27 fill=%27%23f3d373%27%3E✿%3C/text%3E%3C/svg%3E"
+    />
     <meta name="theme-color" content="#1198dd" />
     <title>Cozy City Café — 3D Preview</title>
   </head>
@@ -12,11 +16,21 @@
       <header>
         <span>COZY CITY CAFÉ</span><small>REFERENCE STUDY · 3D</small>
       </header>
+      <div class="view-switch">
+        <label for="view">Góc nhìn</label
+        ><select id="view" aria-label="Góc camera tham chiếu">
+          <option value="overview">01 · Toàn khu phố</option>
+          <option value="flowers">02 · Từ cửa hàng hoa</option>
+          <option value="street">03 · Đi bộ ngoài phố</option>
+          <option value="counter">04 · Quầy pha chế</option>
+        </select>
+      </div>
       <aside><p id="status" role="status">Đang dựng khung cảnh…</p></aside>
       <nav aria-label="Điều khiển camera">
         <button id="orbit" aria-pressed="true">Free Camera</button>
         <button id="pov" aria-pressed="false">Đi bộ · WASD</button>
         <button id="reset">↗ Reset to Reference View</button>
+        <button id="motion" aria-pressed="false">Tạm dừng</button>
         <button id="capture" aria-label="Chụp ảnh khung cảnh">
           ↓ Chụp ảnh
         </button>

@@ -120,3 +120,58 @@ footer {
     font-size: 8px;
   }
 }
+.view-switch {
+  position: absolute;
+  right: 28px;
+  top: 52px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 11px;
+  background: #f8f1dfe8;
+  border: 1px solid #fff8;
+  border-radius: 8px;
+  color: #426153;
+  backdrop-filter: blur(10px);
+  font-size: 10px;
+}
+.view-switch select {
+  font: inherit;
+  color: #426153;
+  background: transparent;
+  border: 0;
+  padding: 4px;
+  cursor: pointer;
+}
+.view-switch select:focus-visible {
+  outline: 2px solid #b58c44;
+}
+.view-switch label {
+  opacity: 0.7;
+}
+@media (max-width: 600px) {
+  .view-switch {
+    top: 68px;
+    right: 14px;
+  }
+  .view-switch label {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  nav {
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  nav button {
+    min-height: 38px;
+    flex: 1 1 auto;
+  }
+  #reset {
+    flex-basis: 150px;
+  }
+  #motion,
+  #capture {
+    flex-basis: 40%;
+  }
+}

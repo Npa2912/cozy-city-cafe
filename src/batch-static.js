@@ -8,7 +8,11 @@ export function batchStaticScene(scene) {
   scene.updateMatrixWorld(true);
   const opaque = new Map();
   const instances = new Map();
+  const center = new THREE.Vector3();
   scene.traverse((object) => {
+    let ancestor = object;
+    while (ancestor && !ancestor.userData.dynamic) ancestor = ancestor.parent;
+    if (ancestor) return;
     if (
       !object.isMesh ||
       Array.isArray(object.material) ||
@@ -16,8 +20,19 @@ export function batchStaticScene(scene) {
     )
       return;
     const collection = object.isInstancedMesh ? instances : opaque;
+    if (object.isInstancedMesh) {
+      if (!object.boundingSphere) object.computeBoundingSphere();
+      center.copy(object.boundingSphere.center);
+    } else {
+      if (!object.geometry.boundingSphere)
+        object.geometry.computeBoundingSphere();
+      center.copy(object.geometry.boundingSphere.center);
+    }
+    center.applyMatrix4(object.matrixWorld);
+    const cell = `${Math.floor(center.x / 16)},${Math.floor(center.z / 16)}`;
     const key =
       object.material.uuid +
+      cell +
       (object.isInstancedMesh ? object.geometry.uuid : "");
     if (!collection.has(key)) collection.set(key, []);
     collection.get(key).push(object);

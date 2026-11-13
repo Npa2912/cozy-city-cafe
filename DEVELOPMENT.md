@@ -19,4 +19,6 @@ Browser validation uses Chromium with WebGL. On headless machines without a
 GPU, Chromium's SwiftShader renderer can be used for visual checks. Production
 should use the browser's normal hardware acceleration. Camera orbit, reference
 reset, WASD pointer lock, PNG download, and portrait layout should be checked
-when editing the controls. The scene itself is static and deterministic.
+when editing the controls. The architecture is static; the van and pedestrians are animated. Use the
+pause button (or reduced-motion emulation) for repeatable visual comparisons.
+Run `npm test` for traffic, walking-lane and dynamic-batching checks.

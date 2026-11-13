@@ -163,22 +163,69 @@ function archShape(w, h) {
   return s;
 }
 function arch(parent, x, y, z, w, h, depth, color) {
-  return mesh(
-    parent,
-    new THREE.ExtrudeGeometry(archShape(w, h), {
-      depth,
-      bevelEnabled: true,
-      bevelSize: 0.05,
-      bevelThickness: 0.04,
-      bevelSegments: 3,
-      steps: 1,
-      curveSegments: 32,
-    }),
-    color,
-    x,
-    y,
-    z,
-  );
+  const geometry = new THREE.ExtrudeGeometry(archShape(w, h), {
+    depth,
+    bevelEnabled: true,
+    bevelSize: 0.05,
+    bevelThickness: 0.04,
+    bevelSegments: 3,
+    steps: 1,
+    curveSegments: 32,
+  });
+  const uv = geometry.attributes.uv,
+    position = geometry.attributes.position;
+  for (let i = 0; i < uv.count; i++)
+    uv.setXY(i, (position.getX(i) + w / 2) / w, position.getY(i) / h);
+  return mesh(parent, geometry, color, x, y, z);
+}
+let warmWindow;
+function getWarmWindow() {
+  if (!warmWindow) {
+    const map = artwork(
+      (c, W, H) => {
+        const glow = c.createLinearGradient(0, 0, 0, H);
+        glow.addColorStop(0, "#f2e3bd");
+        glow.addColorStop(0.6, "#cda46b");
+        glow.addColorStop(1, "#927e59");
+        c.fillStyle = glow;
+        c.fillRect(0, 0, W, H);
+        for (let row = 0; row < 4; row++) {
+          const yy = H * 0.25 + row * H * 0.19;
+          c.fillStyle = "#9c7248";
+          c.fillRect(0, yy + 35, W, 10);
+          for (let i = 0; i < 8; i++) {
+            const xx = 24 + i * 62;
+            c.fillStyle = ["#f2d597", "#e4c5ad", "#acbd91", "#dca2ab"][i % 4];
+            c.beginPath();
+            c.roundRect(xx, yy, 34, 32, 8);
+            c.fill();
+            c.fillStyle = "#fff2cb";
+            c.fillRect(xx + 5, yy + 3, 4, 19);
+          }
+        }
+        c.fillStyle = "#f8e5a8";
+        c.beginPath();
+        c.arc(W / 2, 70, 30, 0, Math.PI * 2);
+        c.fill();
+        c.strokeStyle = "#eee5c0";
+        c.lineWidth = 7;
+        c.beginPath();
+        c.moveTo(0, H * 0.7);
+        c.lineTo(W * 0.5, 0);
+        c.stroke();
+      },
+      512,
+      768,
+    );
+    warmWindow = mat("#fff3d6", {
+      map,
+      emissive: "#f5cf8c",
+      emissiveMap: map,
+      emissiveIntensity: 0.22,
+      roughness: 0.3,
+    });
+  }
+  return warmWindow;
 }
 function archedWindow(parent, x, y, z, w, h) {
   arch(parent, x, y, z, w, h, 0.13, palette.wood);
@@ -190,7 +237,7 @@ function archedWindow(parent, x, y, z, w, h) {
     w - 0.24,
     h - 0.27,
     0.03,
-    mat(palette.glass, { metalness: 0.25, roughness: 0.25 }),
+    getWarmWindow(),
   );
   box(
     parent,
@@ -356,7 +403,7 @@ function tiledRoof(parent, x, y, z, w, d) {
     bevelEnabled: false,
     curveSegments: 24,
   });
-  const roof = mesh(parent, geom, "#b3a079", x - w / 2, y, z);
+  const roof = mesh(parent, geom, "#ccaa7e", x - w / 2, y, z);
   roof.rotation.y = Math.PI / 2;
   roof.position.set(x - w / 2, y, z);
   for (let i = 0; i <= Math.ceil(w / 0.48); i++) {
@@ -371,7 +418,7 @@ function tiledRoof(parent, x, y, z, w, d) {
         [xx, y + 0.06, z - d / 2],
       ],
       0.09,
-      "#83775e",
+      "#9c805c",
     );
   }
   box(parent, x, y - 0.12, z + d / 2, w + 0.45, 0.22, 0.23, "#d4bc8e");
@@ -474,16 +521,15 @@ function ground(scene) {
   pavement.wrapS = pavement.wrapT = THREE.RepeatWrapping;
   pavement.repeat.set(6, 23);
   const pmat = mat("#ffffff", { map: pavement });
-  box(scene, -11, 0.06, -29, 21, 0.3, 134, pmat, 0.05);
-  box(scene, 17, 0.06, -29, 17, 0.3, 134, pmat, 0.05);
+  box(scene, -11, 0.08, -29, 21, 0.3, 134, pmat, 0.05);
+  box(scene, 17, 0.08, -29, 17, 0.3, 134, pmat, 0.05);
   for (let z = -90; z < 36; z += 0.65) {
-    box(scene, -0.38, 0.21, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
-    box(scene, 8.7, 0.21, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
+    box(scene, -0.38, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
+    box(scene, 8.7, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
   }
   for (let z = -80; z < 16; z += 7)
     box(scene, 4, 0.005, z, 0.15, 0.015, 2.8, "#eee0b8", 0.01);
-  for (let i = 0; i < 9; i++)
-    box(scene, 3.8, 0.012, 16 + i * 0.38, 8, 0.02, 0.18, "#e9e4d9", 0.01);
+
   const sidewalk = artwork((c, W, H) => {
     c.fillStyle = "#d58e7d";
     c.fillRect(0, 0, W, H);
@@ -601,8 +647,6 @@ function shop(scene) {
   box(g, 0, 5.65, -2.5, 13, 0.35, 5.6, palette.cream, 0.15);
   box(g, 0, 0.28, -2.1, 12.4, 0.12, 5.5, "#b19c76");
   box(g, 0, 4.9, -4.8, 11, 0.7, 0.05, "#a6b9a0");
-  for (let i = 0; i < 6; i++)
-    box(g, -5 + i * 2, 3.3, -4.8, 1.4, 1.7, 0.05, "#d4c09a");
   // Broad continuous glazing with visible shelves, plants, counter and pendant lamps.
   box(
     g,
@@ -612,18 +656,16 @@ function shop(scene) {
     11.8,
     4.8,
     0.12,
-    mat("#70b8c1", {
+    mat("#e3e8d5", {
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.1,
       roughness: 0.18,
-      metalness: 0.1,
+      metalness: 0,
     }),
   );
-  box(g, 0, 0.65, -0.85, 10.7, 0.65, 1.2, "#a37c51");
+  box(g, -3.2, 0.72, -2.8, 5.0, 0.75, 1.1, "#a37c51");
   for (let j = 0; j < 3; j++) {
-    box(g, -1, 1.1 + j * 0.72, -1.0, 8, 0.1, 0.5, "#694f36");
-    for (let i = 0; i < 9; i++)
-      pot(g, -4.3 + i * 0.83, 1.18 + j * 0.72, -0.95, 0.16, (i + j) % 3 === 0);
+    box(g, -3.6, 1.6 + j * 0.62, -4.55, 4.2, 0.1, 0.45, "#694f36");
   }
   for (const x of [-4.6, -2.8, 2.4, 4.7]) {
     box(g, x, 2.75, 0.68, 0.13, 4.8, 0.13, palette.wood, 0.03);
@@ -660,7 +702,7 @@ function shop(scene) {
     3.25,
     4.76,
     0.04,
-    mat("#80bfc3", { transparent: true, opacity: 0.32, roughness: 0.18 }),
+    mat("#e5e6d1", { transparent: true, opacity: 0.1, roughness: 0.18 }),
   );
   box(g, -0.3, 2.5, 1.1, 0.14, 4.3, 0.11, palette.wood, 0.025);
   box(g, -0.3, 3.75, 1.1, 3.2, 0.14, 0.12, palette.wood, 0.025);
@@ -680,7 +722,7 @@ function shop(scene) {
       0.04,
       mat("#90bcc0", {
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.18,
         roughness: 0.18,
         metalness: 0.2,
       }),
@@ -718,7 +760,7 @@ function shop(scene) {
   arch(g, -0.5, 6.25, 0.84, 4.5, 2.45, 0.06, "#c7b995");
   arch(g, -0.5, 6.38, 0.93, 4.12, 2.14, 0.04, "#aaaab9");
   flowerLogo(g, -0.5, 7.35, 1.04, 0.93);
-  const lettering = new TextGeometry("ANTELO", {
+  const lettering = new TextGeometry("ANTELEO", {
     font: new FontLoader().parse(roundedFont),
     size: 0.62,
     depth: 0.16,
@@ -728,7 +770,7 @@ function shop(scene) {
     bevelThickness: 0.025,
     bevelSegments: 3,
   });
-  mesh(g, lettering, [mat("#c1d96f"), mat("#4e9e78")], 2.05, 6.95, 0.92);
+  mesh(g, lettering, [mat("#f2d262"), mat("#4e9e78")], 2.05, 6.95, 0.92);
   // Sculpted side pilasters.
   for (const x of [-6.15, 6.15]) {
     box(g, x, 2.8, 0.58, 0.5, 5.5, 0.65, palette.trim, 0.22);
@@ -750,8 +792,6 @@ function shop(scene) {
   }
   box(g, 4.9, 0.74, 1.45, 3.7, 0.17, 0.8, "#70503a");
   for (const x of [3.5, 6.2]) box(g, x, 0.42, 1.4, 0.12, 0.6, 0.12, "#4a4440");
-  for (let i = 0; i < 6; i++)
-    pot(g, 3.3 + i * 0.55, 0.85, 1.4, 0.26 + (i % 2) * 0.08, i % 2 === 0);
   for (let i = 0; i < 8; i++) pot(g, -5.4 + random() * 10, 0.35, -0.2, 0.24);
   box(g, -1, 0.29, 1.7, 3, 0.035, 1, "#c495a8", 0.2);
   for (let i = 0; i < 11; i++) {
@@ -775,6 +815,11 @@ function shop(scene) {
   const smallFlower = group(canSign, 0, -0.12, 0.57);
   smallFlower.scale.setScalar(0.35);
   flowerLogo(smallFlower, 0, 0, 0, 1);
+  // The rooftop sculpture rests on a raised service roof, including from rear views.
+  box(g, 2, 6.95, -2.2, 4.4, 2.1, 3.8, palette.cream, 0.25);
+  box(g, 2, 8.0, -2.2, 4.6, 0.16, 4.0, palette.trim, 0.08);
+  for (let i = 0; i < 5; i++)
+    box(g, 4.23, 6.45 + i * 0.19, -2.2, 0.035, 0.07, 1.6, "#b4a582", 0.015);
   wateringCan(g);
   return g;
 }
@@ -872,13 +917,70 @@ function barber(scene, x, z) {
   sphere(g, 0, 4.02, 0, 0.27, 0.27, 0.27, "#49423f");
 }
 function bench(scene, x, z, rotation = 0) {
-  const g = group(scene, x, 0, z, rotation);
-  for (const xx of [-1.2, 1.2]) {
-    box(g, xx, 0.45, 0, 0.35, 0.8, 0.66, "#4b4840", 0.08);
-    box(g, xx, 0.82, 0, 0.4, 0.24, 0.8, "#4b4840", 0.1);
+  const g = group(scene, x, 0.23, z, rotation);
+  for (const xx of [-1.18, 1.18]) {
+    tube(
+      g,
+      [
+        [xx, 0, 0.34],
+        [xx - 0.02, 0.38, 0.27],
+        [xx, 0.6, 0],
+        [xx, 0.65, -0.24],
+        [xx, 0.98, -0.43],
+        [xx, 1.38, -0.48],
+      ],
+      0.075,
+      "#48534a",
+    );
+    tube(
+      g,
+      [
+        [xx, 0.0, -0.38],
+        [xx, 0.4, -0.27],
+        [xx, 0.57, 0.05],
+      ],
+      0.065,
+      "#48534a",
+    );
+    tube(
+      g,
+      [
+        [xx, 0.57, 0.3],
+        [xx, 0.83, 0.3],
+        [xx, 0.95, 0.06],
+        [xx, 0.88, -0.3],
+      ],
+      0.045,
+      "#48534a",
+    );
   }
+  for (let i = 0; i < 5; i++)
+    box(g, 0, 0.58, -0.27 + i * 0.135, 2.9, 0.12, 0.11, "#cda16a", 0.04);
   for (let i = 0; i < 4; i++)
-    box(g, 0, 0.81, -0.27 + i * 0.18, 2.85, 0.14, 0.15, "#b48957", 0.045);
+    box(
+      g,
+      0,
+      0.85 + i * 0.17,
+      -0.38 - i * 0.035,
+      2.9,
+      0.13,
+      0.1,
+      "#deb47b",
+      0.04,
+    );
+  for (const xx of [-1.14, 1.14])
+    for (let i = 0; i < 4; i++)
+      sphere(
+        g,
+        xx,
+        0.85 + i * 0.17,
+        -0.31 - i * 0.035,
+        0.025,
+        0.025,
+        0.015,
+        "#b29358",
+      );
+  return g;
 }
 function bin(scene, x, z) {
   const g = group(scene, x, 0.25, z);
@@ -1021,6 +1123,70 @@ function tower(scene, x, z, w, h, color, variant = 0) {
     box(g, w * 0.49, yy, 0, 0.055, 0.022, 0.05, "#b9baaa", 0.005);
   cylinder(g, w * 0.23, h + 0.65, -d * 0.6, 0.55, 0.55, 1.0, "#cfb6ad");
   const floors = Math.floor((h - 1) / 2.3);
+  // Window bays continue around the side and rear façades, rather than leaving
+  // blank tower sides when the free camera moves off the reference view.
+  for (const side of [-1, 1]) {
+    for (let j = 0; j < floors; j++) {
+      const yy = 2 + j * 2.25;
+      for (let i = 0; i < 3; i++) {
+        const zz = -d * 0.18 - i * d * 0.32;
+        box(
+          g,
+          side * (w / 2 + 0.025),
+          yy,
+          zz,
+          0.08,
+          1.35,
+          d * 0.23,
+          "#6b9eaf",
+          0.04,
+        );
+        box(
+          g,
+          side * (w / 2 + 0.09),
+          yy - 0.76,
+          zz,
+          0.24,
+          0.1,
+          d * 0.28,
+          "#eadfcd",
+          0.03,
+        );
+        box(
+          g,
+          side * (w / 2 + 0.08),
+          yy,
+          zz,
+          0.04,
+          1.35,
+          0.045,
+          "#e2dcca",
+          0.01,
+        );
+      }
+      box(
+        g,
+        side * (w / 2 + 0.03),
+        yy - 0.95,
+        -d / 2,
+        0.1,
+        0.06,
+        d,
+        "#d5d1bf",
+        0.02,
+      );
+    }
+    for (const zz of [-0.05, -d + 0.05])
+      box(g, side * (w / 2 - 0.08), h / 2, zz, 0.15, h, 0.16, "#dbd9c5", 0.05);
+  }
+  for (let j = 0; j < floors; j++)
+    for (let i = 0; i < 3; i++) {
+      const xx = -w * 0.32 + i * w * 0.32,
+        yy = 2 + j * 2.25;
+      box(g, xx, yy, -d - 0.035, w * 0.23, 1.35, 0.08, "#81adb9", 0.04);
+      box(g, xx, yy - 0.76, -d - 0.08, w * 0.27, 0.1, 0.22, "#eadfcd", 0.03);
+    }
+
   for (let j = 0; j < floors; j++) {
     const yy = 2 + j * 2.25;
     for (let i = 0; i < 3; i++) {
@@ -1121,19 +1287,22 @@ function billboard(parent, x, y, z, w, h) {
   );
 }
 function distantCafe(scene) {
-  const g = group(scene, 5, 0, -38);
+  const g = group(scene, 16, 0, -23.7, -Math.PI / 2);
+  g.scale.x = 0.58;
   box(g, 0, 2.5, -2, 11, 5, 5, "#4a9689", 0.5);
   arch(g, 0, 0.3, 0.6, 8.8, 5, 0.2, "#4b9f9f");
   for (let i = 0; i < 5; i++)
     box(g, -3.5 + i * 1.75, 2, 0.95, 1.42, 2.9, 0.12, "#538790", 0.14);
   label(g, "FRESH & COZY", 0, 3.9, 1.1, 7, 0.7, "#f5d5bb", "#3e7f80");
-  const doughnut = torus(g, 0, 7, -1, 1.75, 0.66, "#d47b70");
+  box(g, 0, 6.8, -1.5, 4, 3.6, 4, "#d0c6a9", 0.22);
+  const donutSign = group(g, 0, 4, 0, Math.PI / 2);
+  const doughnut = torus(donutSign, 0, 7, -1, 1.75, 0.66, "#e58f9d");
   doughnut.rotation.z = 0.2;
   for (let i = 0; i < 32; i++) {
     const a = random() * Math.PI * 2;
     const rr = 1.5 + random() * 0.45;
     const sprinkle = box(
-      g,
+      donutSign,
       Math.sin(a) * rr,
       7 + Math.cos(a) * rr,
       -0.31,
@@ -1145,31 +1314,7 @@ function distantCafe(scene) {
     );
     sprinkle.rotation.z = random() * 3;
   }
-  sphere(g, 1, 7, -3, 6, 2, 2.2, "#f4e8ca");
-  sphere(g, 4.9, 6.3, -2, 2, 1.7, 1.5, "#bad3a2");
-  const star = new THREE.Shape();
-  for (let i = 0; i < 10; i++) {
-    const a = (i * Math.PI) / 5 + Math.PI / 2,
-      r = i % 2 ? 0.28 : 0.65;
-    const xx = Math.cos(a) * r,
-      yy = Math.sin(a) * r;
-    i ? star.lineTo(xx, yy) : star.moveTo(xx, yy);
-  }
-  star.closePath();
-  mesh(
-    g,
-    new THREE.ExtrudeGeometry(star, {
-      depth: 0.15,
-      bevelEnabled: true,
-      bevelSize: 0.05,
-      bevelThickness: 0.05,
-    }),
-    "#edd064",
-    -2.3,
-    8.4,
-    -0.5,
-  );
-  umbrella(scene, 4, 3.1, -34, 2.1);
+  umbrella(scene, 12.5, 3.1, -34, 2.1);
 }
 function van(scene, x, z) {
   const g = group(scene, x, 0.35, z);
@@ -1199,7 +1344,7 @@ function scooter(scene, x, z) {
 }
 function rightForeground(scene) {
   const g = group(scene, 16, 0, 9, -Math.PI / 2);
-  box(g, 0, 4, -3.5, 9, 8, 9, "#205955", 0.2);
+  box(g, 0, 4, -3.5, 9, 8, 9, "#286e61", 0.3);
   for (let i = 0; i < 3; i++) archedWindow(g, -2.8 + i * 2.7, 0.3, 1.1, 2, 4.7);
   box(g, 0, 5.5, 1.2, 9.5, 0.3, 0.45, "#739078");
   for (let i = 0; i < 9; i++) {
@@ -1219,30 +1364,30 @@ function rightForeground(scene) {
         bevelThickness: 0.04,
         bevelSegments: 2,
       }),
-      i % 2 ? "#eee5cc" : "#345b4d",
+      i % 2 ? "#fff1db" : "#5d9b84",
       -4.5 + i * 1.03,
       5.9,
       1.4,
     );
     panel.rotation.y = Math.PI / 2;
   }
-  const sign = group(g, -3.5, 4.7, 3, 1.1);
-  hangingSign(sign, 0, 0, 0, "flower");
+
   scooter(scene, 13, -4);
 }
 export function buildStreet(scene) {
   seed = 7381;
   ground(scene);
   // Street axis extends from the foreground to the market at the vanishing point.
-  tower(scene, -14, -9, 7, 21, "#c0c9ca");
-  tower(scene, -10, -17, 6.5, 16, "#d4b548", 2);
-  tower(scene, -7, -24, 6, 25, "#a9c379", 1);
-  tower(scene, -0.8, -30, 4.4, 27, "#d4d2c8");
-  tower(scene, 13.5, -34, 5, 19, "#ca8f9e");
-  tower(scene, 15, -37, 6, 23, "#96b6bc");
+  tower(scene, -14, -9, 7, 21, "#e6e0d9");
+  tower(scene, -10, -17, 6.5, 16, "#e1c35c", 2);
+  tower(scene, -7, -24, 6, 25, "#a7cb84", 1);
+  tower(scene, -4.5, -30, 4.4, 27, "#d4d2c8");
+  tower(scene, 13.5, -34, 5, 19, "#dfadc1");
+  tower(scene, 15, -37, 6, 23, "#9ac4d7");
   tower(scene, 18, -47, 6, 16, "#e3b8ab");
-  billboard(scene, -1.4, 19, -27, 3.1, 9.5);
-  const air = group(scene, 4.9, 12, -20);
+  billboard(scene, -4.5, 19, -29.6, 3.1, 9.5);
+  const air = group(scene, -3.2, 12, -29.75);
+  air.scale.setScalar(.45);
   box(air, 0, 0, 0, 3.2, 2.5, 1.1, "#dbcfc0", 0.2);
   const fan = cylinder(air, -0.6, 0, 0.65, 0.9, 0.9, 0.13, "#5e6c72");
   fan.rotation.x = Math.PI / 2;
@@ -1256,18 +1401,18 @@ export function buildStreet(scene) {
       "#96a3a1",
     );
   }
-  smallBuilding(scene, -6, 6, 7, "#28746e").rotation.y = Math.PI / 2;
-  shop(scene);
+  smallBuilding(scene, -6, 10, 7, "#28746e").rotation.y = Math.PI / 2;
+  const cafe = shop(scene);
   smallBuilding(scene, -5, -19, 7, "#397d69").rotation.y = Math.PI / 2;
-  smallBuilding(scene, 14, -17, 7, "#558d78");
-  smallBuilding(scene, 14, -30, 6, "#89ab98");
+  smallBuilding(scene, 16, -17, 7, "#558d78").rotation.y = -Math.PI / 2;
+  smallBuilding(scene, 16, -30, 6, "#89ab98").rotation.y = -Math.PI / 2;
   rightForeground(scene);
   distantCafe(scene);
   vending(scene, -2.6, 3.3);
   barber(scene, -2.6, 5.0);
-  bench(scene, 7.3, 8.8, Math.PI / 2);
-  bench(scene, 8.2, 5.8, Math.PI / 2);
-  bin(scene, 8.8, 3);
+  bench(scene, 9.7, 8.8, Math.PI / 2);
+  bench(scene, 9.7, 2.4, Math.PI / 2);
+  bin(scene, 10.0, -0.5);
   hydrant(scene, 10.7, 1.2);
   lamp(scene, 11.2, -0.2, 7.5);
   lamp(scene, 8.9, -18, 6);
@@ -1276,14 +1421,14 @@ export function buildStreet(scene) {
   cylinder(scene, -2, 6.1, 9, 0.15, 0.2, 12, "#a3aaa3");
   cylinder(scene, -2, 0.9, 9, 0.32, 0.37, 1.8, "#62667e");
   hangingSign(scene, -2.8, 4.7, 3.3, "cafe");
-  van(scene, 0, -12);
+
   umbrella(scene, 13.2, 3.4, -24, 1.7);
   umbrella(scene, 8.8, 2.8, -29, 1.5);
   for (const [x, z] of [
     [12, -2],
     [10.2, -8],
-    [-0.8, -18],
-    [12, -24],
+    [-2.2, -18],
+    [14, -24],
     [-15, 1],
   ]) {
     pot(scene, x, 0.25, z, 0.5, true);
@@ -1307,7 +1452,8 @@ export function buildStreet(scene) {
     );
   }
   for (let i = 0; i < 9; i++) {
-    const x = -28 + random() * 60,
+    const rawX = -28 + random() * 60,
+      x = rawX > -8 && rawX < 14 ? (rawX < 4 ? -12 : 18) : rawX,
       z = -47 - random() * 35,
       h = 12 + random() * 12;
     tower(
@@ -1351,4 +1497,32 @@ export function buildStreet(scene) {
   );
   sky.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = sky;
+  return { cafe };
 }
+
+export {
+  mat,
+  mesh,
+  box,
+  cylinder,
+  sphere,
+  tube,
+  rod,
+  torus,
+  group,
+  artwork,
+  label,
+  arch,
+  archedWindow,
+  foliage,
+  vine,
+  pot,
+  tiledRoof,
+  flowerLogo,
+  bench,
+  bin,
+  lamp,
+  umbrella,
+  smallBuilding,
+  tower,
+};
