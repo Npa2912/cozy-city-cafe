@@ -256,8 +256,9 @@ export function cafeWorld(scene, cafe, camera) {
       queue: [point(-1.8, -1.25), point(-3.2, -1.25), point(-4.6, -1.25)],
       handoff: point(-0.75, -1.65),
       exit: point(-2.8, 2.0),
+      departure: { x: -1.05, z: -23 },
     },
-    bounds: { minX: -8.45, maxX: -1.45, minZ: -14.0, maxZ: 3.8 },
+    bounds: { minX: -8.45, maxX: -0.8, minZ: -30, maxZ: 3.8 },
     floorAt(p) {
       const a = URBAN_PLAN.annex;
       if (p.x > a.minX && p.x < a.maxX && p.z > a.minZ && p.z < a.maxZ)
@@ -419,7 +420,12 @@ export function cafeWorld(scene, cafe, camera) {
           ? Math.min(1, n.age / 0.7) *
             (1 - Math.min(1, Math.max(0, n.age - CONFIG.drinkSeconds) / 0.7))
           : 0;
-        a.g.position.set(n.pos.x, 0.26 + seated * 0.135, n.pos.z);
+        const local = toLocal(n.pos),
+          floor =
+            local.x > -6.2 && local.x < 6.2 && local.z < 1.1 && local.z > -5.1
+              ? 0.391
+              : 0.23;
+        a.g.position.set(n.pos.x, floor - 0.13 + seated * 0.135, n.pos.z);
         a.g.visible = true;
         if (
           [
@@ -454,9 +460,12 @@ export function cafeWorld(scene, cafe, camera) {
         a.drink.visible =
           n.state === "SITTING_AND_DRINKING" ||
           (n.pickedUp &&
-            ["PICKING_UP", "WALKING_TO_TABLE", "LEAVING_SHOP"].includes(
-              n.state,
-            ));
+            [
+              "PICKING_UP",
+              "WALKING_TO_TABLE",
+              "LEAVING_SHOP",
+              "WALKING_AWAY",
+            ].includes(n.state));
         if (a.drink.visible)
           a.limbs[0].rotation.x =
             -0.9 -

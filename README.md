@@ -1,21 +1,10 @@
-# ANTELEO · Café Gameplay & City Preview
+# ANTELEO · Guided Café Gameplay & City Preview
 
-A playable single-player café prototype built directly into the existing
-Vite + Three.js city. **Milestones 1–2** provide a physical door, capsule
-collision, modeled customers, four recipes, station interactions, POS, money,
-EXP, quests and versioned local saves. **Milestone 3** (purchased furniture,
-Edit Mode and upgrade-based expansion) is not implemented.
+A playable café in the existing Vite + Three.js city: three customers queue FIFO, the player selects one order, follows 3–5 highlighted brewing steps, gives change in VND and serves customers who then sit or take away. The fixed barista is removed and the staff counter is cleared and reoriented.
 
-Click **Chơi quán**, use **E** at the door/stations, **O** to toggle admission,
-**H** for recipes and **J** for quests. WASD/mouse move and look; Escape frees
-the cursor. [Play guide and scope](docs/GAMEPLAY.md).
+Click **Chơi quán**, use **E** at the door, **O** to admit customers, then walk around the right end of the counter to the staff POS. Start the first order and follow the golden markers. Payment happens before seating. **J** opens quests; settings provide static highlights and easier change. [Play guide, save migration and tested scope](docs/GAMEPLAY.md).
 
-[Recipes](docs/gameplay-recipes.png) · [Customer at a table](docs/gameplay-customer.png) ·
-[Working POS](docs/gameplay-pos.png) · [New milk-tea mascot](docs/gameplay-mascot.png)
-
-The cream café, flower emblem, purple vending machine, barber pole, city, coast
-and all 12 camera presets are retained. The rooftop watering can is replaced
-by the requested milk-tea mascot; the entrance aisle and counter are cleared.
+[Orders](docs/guided-orders.png) · [Brewing guide](docs/guided-brewing.png) · [Cash drawer](docs/guided-cash.png)
 
 Earlier visual studies (before gameplay):
 
@@ -60,7 +49,7 @@ model downloads or external asset requests are required at runtime.
   Escape releases pointer lock. POV now uses capsule collision; Free Camera
   remains available for unrestricted visual inspection.
 - **Reset to Reference View:** returns to the expanded reference view.
-- **View selector:** 12 options including the new city, residential and fish
+- **View selector:** 13 options including the new city, residential and fish
   views; all nine previous presets remain available.
 - **Tạm dừng / Tiếp tục:** pause or resume the moving scene for inspection.
 - **Chụp ảnh:** downloads a PNG of the viewport without interface overlays.
@@ -99,7 +88,7 @@ preserve acceleration and braking when a frame is slow. This is a scheduled
 preview animation, not a traffic AI or gameplay system.
 
 Four walking characters use reserved pavement routes, two standing characters
-populate the shopfronts, and a barista works behind the café counter. Walking
+populate the shopfronts, and the café counter is operated by the player. Walking
 positions ease into turns, with a brief turn pause and articulated arm/leg
 swings. Passing routes are separated; none of the walkers enters the road.
 
@@ -114,7 +103,7 @@ swings. Passing routes are separated; none of the walkers enters the road.
 - `src/traffic.js`, `src/pedestrians.js`: deterministic movement schedules.
 - `src/batch-static.js`: static geometry/material batching in spatial cells; explicitly excludes
   moving hierarchies. Flowers and foliage use instancing.
-- `src/game/`: customer FSM, orders, recipe validator, preparation, payments,
+- `src/game/`: customer FSM, FIFO orders, guided preparation, cash register, payments,
   economy, quests, collision/navigation, saves, UI and scene bindings.
 - `src/main.js`: camera presets, controls, sun and warm interior lights,
   dynamic shadow refresh, pause and PNG export.
@@ -135,15 +124,6 @@ contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test` passes **33 checks** covering café lifecycle rules, all four recipes,
-wrong drinks/costs, payment/reward deduplication, save/load, capsule contacts and
-A* paths, plus the existing city/traffic/foliage checks. `npm run build` succeeds
-with a non-failing bundle advisory (approximately 753 kB / 222 kB gzip).
-
-The real-geometry browser test operates the door, receives an order, crafts at
-the actual stations, serves a modeled customer, waits for drinking, pays once,
-walks the customer outside, cleans the seat and writes the save. Its accounting
-result is 25 xu revenue, 3 xu ingredient cost and a 122 xu balance. Detailed
-validation and remaining work are recorded in the play guide.
+`npm test`: **43 passed**. `npm run build`: successful, with a nonfatal bundle-size advisory. Real-scene Chromium QA completed a three-customer queue, guided espresso, exact change, seating, sidewalk exit and save. Accounting: 20.000đ sales, 3.000đ ingredients, 117.000đ balance. [Validation details and limitations](docs/GAMEPLAY.md).
 
 No Vercel deployment, environment publication or merge to main was performed.

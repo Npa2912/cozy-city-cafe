@@ -122,7 +122,11 @@ export function loadGame(storage = localStorage) {
     }
     const old = storage.getItem(LEGACY_KEY);
     if (!old) return null;
-    if (!storage.getItem(BACKUP_KEY)) storage.setItem(BACKUP_KEY, old);
+    try {
+      if (!storage.getItem(BACKUP_KEY)) storage.setItem(BACKUP_KEY, old);
+    } catch {
+      /* Original v1 key is retained even when backup storage is full. */
+    }
     return migrateV1(old);
   } catch {
     return null;

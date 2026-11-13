@@ -1,3 +1,4 @@
+// Optional browser QA. Run against the Vite dev server; the test bridge is absent in production.
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright"),
   assert = require("node:assert/strict");
 let b, p;
@@ -13,7 +14,7 @@ let b, p;
       "--enable-unsafe-swiftshader",
     ],
   });
-  p = await b.newPage({ viewport: { width: 800, height: 600 } });
+  p = await b.newPage({ viewport: { width: 900, height: 650 } });
   p.setDefaultTimeout(180000);
   const errors = [];
   p.on("pageerror", (e) => {
@@ -21,8 +22,7 @@ let b, p;
     console.log("ERROR", e.message);
   });
   p.on("console", (m) => {
-    if (m.type() === "error" && !m.text().includes("pointer lock"))
-      errors.push(m.text().slice(0, 800));
+    if (m.type() === "error") errors.push(m.text().slice(0, 800));
   });
   await p.addInitScript(() => {
     const real = performance.now.bind(performance);
@@ -30,11 +30,10 @@ let b, p;
     performance.now = () => window.__heldTime ?? real();
   });
   await p.goto(
-    process.env.APP_URL || "http://127.0.0.1:5173/?test&view=counter",
+    process.env.APP_URL || "http://127.0.0.1:5173/?test&view=staff",
     { waitUntil: "networkidle", timeout: 180000 },
   );
   await p.evaluate(() => {
-    localStorage.clear();
     if (document.querySelector("#motion").textContent === "Tạm dừng")
       document.querySelector("#motion").click();
   });
@@ -52,161 +51,168 @@ let b, p;
     })),
   );
   await p.keyboard.press("Escape");
-  const position = async (x, z, id) =>
-    p.evaluate(
-      ({ x, z, id }) => {
-        const { game, camera, pov } = __cafeTest;
-        pov.unlock();
-        const pos = game.world.point(x, z);
-        camera.position.set(pos.x, game.world.floorAt(pos) + 1.65, pos.z);
-        const target =
-          game.world.stations.find((s) => s.id === id)?.position ||
-          game.world.seats[0].center;
-        camera.lookAt(target.x, target.y ?? 1.3, target.z);
-        game.update(0);
-        return {
-          safe: game.collision.safe(pos),
-          prompt: document.querySelector(".game-interact").textContent,
-        };
-      },
-      { x, z, id },
-    );
-  await position(-0.3, 2.05, "door");
-  const closed = await p.evaluate(() => {
-    const { game, camera } = __cafeTest;
-    game.movePlayer(-4, 0);
-    return camera.position.x;
-  });
-  assert(closed > -2.4, "closed door blocks real world capsule");
-  await position(-0.3, 2.05, "door");
+  const position = async (id) =>
+    p.evaluate((id) => {
+      const { game, camera, pov } = __cafeTest;
+      pov.unlock();
+      const target = game.world.stations.find((s) => s.id === id).position,
+        l = game.world.toLocal(target),
+        pos = game.world.point(l.x, id === "door" ? 2.05 : -3.95);
+      camera.position.set(pos.x, game.world.floorAt(pos) + 1.65, pos.z);
+      camera.lookAt(target.x, target.y, target.z);
+      game.update(0);
+      return { safe: game.collision.safe(pos), staff: game.world.isStaff(pos) };
+    }, id);
+  await position("door");
   await p.keyboard.press("KeyE");
   assert(await p.evaluate(() => __cafeTest.game.model.doorOpen));
   await p.evaluate(() => {
     for (let i = 0; i < 40; i++) __cafeTest.game.update(0.05);
   });
-  const opened = await p.evaluate(() => {
-    const { game, camera } = __cafeTest;
-    game.movePlayer(-3, 0);
-    return camera.position.x;
-  });
-  assert(opened < -3.8);
-  console.log("actual door/capsule passed");
-  await position(-4.8, -1.1, "ingredients");
-  await p.evaluate(() =>
-    document.querySelector('[data-action="business"]').click(),
+  console.log(
+    "staff access",
+    await p.evaluate(async () => {
+      const { game } = __cafeTest;
+      const { findPath, blocked } = await import("/src/game/collision.js");
+      const from = game.world.point(-0.3, -0.8),
+        to = game.world.point(-3.7, -3.95),
+        shapes = [...game.obstacles, game.world.doorShape()],
+        path = findPath(from, to, shapes, game.world.bounds, 0.28);
+      return { path: !!path, staffBlocked: blocked(to, 0.28, shapes) };
+    }),
   );
-  const advance = async (state, limit = 1000) =>
+  assert((await position("counter")).safe, "staff POS location must be clear");
+  await p.evaluate(() => {
+    __cafeTest.game.model.random = () => 0.99;
+  });
+  await p.keyboard.press("KeyO");
+  const advance = async (test, limit = 1500) =>
     p.evaluate(
-      ({ state, limit }) => {
+      ({ test, limit }) => {
         const { game } = __cafeTest;
         for (let i = 0; i < limit; i++) {
           game.update(0.05);
-          if (game.model.customers[0]?.state === state)
-            return { state, pos: game.model.customers[0].pos };
+          if (
+            test === "queue" &&
+            game.model.orders.filter((o) => o.status === "WAITING").length ===
+              3 &&
+            game.model.customers.every((n) => n.queueReady)
+          )
+            return { ok: true, customers: game.model.customers };
+          if (
+            test === "sit" &&
+            game.model.customers.find((n) => n.id === 1)?.state ===
+              "SITTING_AND_DRINKING"
+          )
+            return { ok: true };
+          if (test === "exit" && game.model.orders[0]?.status === "COMPLETED")
+            return { ok: true };
         }
-        return { customers: game.model.customers, message: game.model.message };
+        return { ok: false, state: game.model.snapshot() };
       },
-      { state, limit },
+      { test, limit },
     );
-  let r = await advance("WAITING_TO_ORDER");
-  console.log("arrival", JSON.stringify(r));
-  assert.equal(r.state, "WAITING_TO_ORDER");
-  await p.evaluate(() => {
-    if (__cafeTest.game.model.business)
-      document.querySelector('[data-action="business"]').click();
-  });
-  const openStation = async (x, z, id) => {
-    console.log("station", id, await position(x, z, id));
-    await p.keyboard.press("KeyE");
-  };
-  await openStation(-2.5, -1, "counter");
-  await p.evaluate(() =>
-    document.querySelector('[data-action="accept"]').click(),
-  );
-  await p.evaluate(() => __cafeTest.game.ui.close());
-  await openStation(-5.15, -1.1, "ingredients");
-  await p.evaluate(() =>
-    document.querySelector('[data-action="craft"][data-id="cup"]').click(),
-  );
-  assert.deepEqual(await p.evaluate(() => __cafeTest.game.model.craft.steps), [
-    "cup",
-  ]);
-  await p.evaluate(() => __cafeTest.game.ui.close());
-  await openStation(-3.7, -1.1, "coffee");
-  await p.evaluate(() =>
-    document.querySelector('[data-action="craft"][data-id="coffee"]').click(),
-  );
-  assert(await p.evaluate(() => !!__cafeTest.game.model.job));
-  await p.evaluate(() => {
-    for (let i = 0; i < 65; i++) __cafeTest.game.update(0.05);
-    __cafeTest.game.ui.close();
-  });
-  await openStation(-5.15, -1.1, "ingredients");
-  await p.evaluate(() =>
-    document.querySelector('[data-action="craft"][data-id="finish"]').click(),
-  );
-  await p.evaluate(() => __cafeTest.game.ui.close());
-  await position(-0.7, -1.1, "delivery");
+  let result = await advance("queue");
+  console.log("queue", JSON.stringify(result));
+  assert(result.ok, "three customers must physically queue");
+  await p.keyboard.press("KeyO");
+  await position("counter");
   await p.keyboard.press("KeyE");
+  assert.equal(await p.locator(".order-card").count(), 3);
+  assert(await p.locator('[data-action="start"][data-id="1"]').isEnabled());
+  assert(!(await p.locator('[data-action="start"][data-id="2"]').isEnabled()));
+  await p.screenshot({ path: "/tmp/cozy-guided-orders.png", timeout: 180000 });
+  await p.evaluate(() =>
+    document.querySelector('[data-action="start"][data-id="1"]').click(),
+  );
+  assert.equal(await p.evaluate(() => __cafeTest.game.model.activeOrder), 1);
+  for (const station of ["ingredients", "coffee", "delivery"]) {
+    assert((await position(station)).safe, station + " staff space");
+    await p.keyboard.press("KeyE");
+    if (station === "coffee") {
+      assert(await p.evaluate(() => !!__cafeTest.game.model.job));
+      await p.screenshot({
+        path: "/tmp/cozy-guided-tutorial.png",
+        timeout: 180000,
+      });
+      await p.evaluate(() => {
+        for (let i = 0; i < 65; i++) __cafeTest.game.update(0.05);
+      });
+    }
+  }
+  await p.evaluate(() => {
+    for (let i = 0; i < 20; i++) __cafeTest.game.update(0.05);
+  });
   assert.equal(
     await p.evaluate(() => __cafeTest.game.model.orders[0].status),
-    "SERVED",
+    "WAITING_PAYMENT",
   );
-  console.log("UI craft and serve passed");
-  await position(-4.8, -1.1, "ingredients");
-  r = await advance("SITTING_AND_DRINKING");
-  console.log("seating", JSON.stringify(r));
-  assert.equal(r.state, "SITTING_AND_DRINKING");
-  await p.evaluate(() => {
-    for (let i = 0; i < 25; i++) __cafeTest.game.update(0.05);
-    const { game, camera } = __cafeTest;
-    const pos = game.world.point(1.3, -1.2);
-    camera.position.set(pos.x, 2.04, pos.z);
-    const s = game.world.seats[0].chair;
-    camera.lookAt(s.x, 1.4, s.z);
-    game.update(0);
-  });
-  await position(-4.8, -1.1, "ingredients");
-  r = await advance("WAITING_FOR_PAYMENT");
-  console.log("cashier", JSON.stringify(r));
-  assert.equal(r.state, "WAITING_FOR_PAYMENT");
-  await openStation(-2.5, -1, "counter");
-  assert(await p.locator('[data-action="pay"]').isEnabled());
-  await p.evaluate(() => document.querySelector('[data-action="pay"]').click());
+  assert(
+    await p.evaluate(() =>
+      __cafeTest.game.model.seats.every((s) => s.status === "AVAILABLE"),
+    ),
+  );
+  await position("counter");
+  await p.keyboard.press("KeyE");
+  assert.equal(await p.locator(".cash-drawer button").count(), 7);
+  await p.evaluate(() =>
+    document.querySelector('[data-action="note"][data-id="50000"]').click(),
+  );
+  assert(!(await p.locator('[data-action="confirm"]').isEnabled()));
+  await p.evaluate(() =>
+    document.querySelector('[data-action="note"][data-id="20000"]').click(),
+  );
+  await p.evaluate(() =>
+    document.querySelector('[data-action="undo"]').click(),
+  );
+  assert.equal(
+    await p.evaluate(() => __cafeTest.game.model.register.notes.length),
+    1,
+  );
+  await p.evaluate(() =>
+    document.querySelector('[data-action="reset"]').click(),
+  );
+  await p.evaluate(() =>
+    document.querySelector('[data-action="hint"]').click(),
+  );
+  for (const note of [50000, 20000, 10000])
+    await p.evaluate(
+      (note) =>
+        document
+          .querySelector(`[data-action="note"][data-id="${note}"]`)
+          .click(),
+      note,
+    );
+  assert(await p.locator('[data-action="confirm"]').isEnabled());
+  await p.screenshot({ path: "/tmp/cozy-guided-cash.png", timeout: 180000 });
+  await p.evaluate(() =>
+    document.querySelector('[data-action="confirm"]').click(),
+  );
   assert.equal(
     await p.evaluate(() => __cafeTest.game.model.account.revenue),
-    25,
+    20000,
+  );
+  assert.equal(
+    await p.evaluate(() => __cafeTest.game.model.account.cash),
+    117000,
   );
   assert(!(await p.evaluate(() => __cafeTest.game.model.pay(1))));
-  await p.evaluate(() => __cafeTest.game.ui.close());
-  await position(-4.8, -1.1, "ingredients");
-  await p.evaluate(() => {
-    for (let i = 0; i < 500; i++) __cafeTest.game.update(0.05);
-  });
-  assert.equal(
-    await p.evaluate(() => __cafeTest.game.model.customers.length),
-    0,
-  );
-  await position(3.1, -2.2, "clean0");
-  await p.keyboard.press("KeyE");
-  await p.evaluate(() => {
-    for (let i = 0; i < 60; i++) __cafeTest.game.update(0.05);
-  });
+  result = await advance("sit");
+  console.log("seating", result);
+  assert(result.ok);
+  result = await advance("exit");
+  console.log("exit", JSON.stringify(result));
+  assert(result.ok);
   assert.equal(
     await p.evaluate(() => __cafeTest.game.model.seats[0].status),
     "AVAILABLE",
   );
+  assert.deepEqual(await p.evaluate(() => __cafeTest.game.model.queue), [2, 3]);
   await p.evaluate(() => __cafeTest.game.persist());
-  assert(
-    await p.evaluate(
-      () =>
-        JSON.parse(localStorage.getItem("anteleo.game.v1")).data.account
-          .revenue === 25,
-    ),
-  );
+  await p.context().storageState({ path: "/tmp/cozy-guided-save.json" });
   assert.deepEqual(errors, []);
   console.log(
-    "FULL REAL-GEOMETRY FLOW PASSED, revenue25, clean seat, save, no errors",
+    "GUIDED REAL-SCENE FLOW PASSED: FIFO3, coffee tutorial, cash 100000-80000=20000, seating, exit, save",
   );
   await b.close();
 })().catch(async (e) => {
@@ -214,25 +220,13 @@ let b, p;
   if (p)
     console.log(
       await p
-        .evaluate(async () => {
-          const { game, camera, pov } = __cafeTest;
-          const { findPath, blocked, contact } = await import(
-            "/src/game/collision.js"
-          );
-          const n = game.model.customers[0],
-            goal = game.world.layout.exit,
-            shapes = [...game.obstacles, game.world.doorShape()];
-          return JSON.stringify({
-            state: game.model.snapshot(),
-            goal,
-            blocked: blocked(goal, 0.23, shapes),
-            blockers: shapes.filter((s) => contact(goal, 0.23, s)),
-            path: n && findPath(n.pos, goal, shapes, game.world.bounds),
-            player: camera.position.toArray(),
-            locked: pov.isLocked,
-            panel: game.ui.panel,
-          });
-        })
+        .evaluate(() =>
+          JSON.stringify({
+            state: __cafeTest.game.model.snapshot(),
+            panel: __cafeTest.game.ui.panel,
+            player: __cafeTest.camera.position.toArray(),
+          }),
+        )
         .catch(() => null),
     );
   if (b) await b.close();

@@ -480,21 +480,17 @@ function cafeInterior(cafe) {
       c.strokeRect(7, 7, W - 14, H - 14);
       c.fillStyle = "#f7e8c1";
       c.font = "bold 52px serif";
-      c.fillText("Coffee", 45, 78);
-      c.fillText("Milk Tea", W / 2 + 35, 78);
+      c.fillText("Cà phê", 45, 78);
+      c.fillText("Trà sữa", W / 2 + 35, 78);
       c.font = "28px sans-serif";
       for (const [i, text] of [
-        "Espresso  ·  3.5",
-        "Café Latte  ·  4.0",
-        "Mocha  ·  4.5",
-        "Cappuccino · 4.0",
+        "Đen · 20.000đ",
+        "Sữa · 25.000đ",
       ].entries())
         c.fillText(text, 45, 142 + i * 57);
       for (const [i, text] of [
-        "Brown sugar · 4.0",
-        "Taro latte · 4.5",
-        "Matcha tea · 4.0",
-        "Jasmine tea · 3.5",
+        "Truyền thống · 30.000đ",
+        "Trân châu · 35.000đ",
       ].entries())
         c.fillText(text, W / 2 + 35, 142 + i * 57);
     },
@@ -633,6 +629,27 @@ function cafeInterior(cafe) {
       mat(["#e5bb8c", "#c8aa7b", "#e6d0a0", "#cb9695"][i], { roughness: 0.35 }),
     );
     cylinder(jars, -5.5 + i * 0.26, 2.23, -3.5, 0.1, 0.1, 0.05, "#ae9270");
+  }
+  // Controls face the operator in the rear aisle, including the symmetric
+  // grinder and blender bodies which previously had no readable front.
+  for (const [x, z, y, text] of [
+    [-4.7, -3.07, 1.61, "ON"],
+    [-2.9, -3.01, 1.4, "MIX"],
+    [-2.4, -3.075, 1.45, "LẮC"],
+  ]) {
+    const panel = label(
+      cafe,
+      text,
+      x,
+      y,
+      z,
+      0.12,
+      0.075,
+      "#f7efd1",
+      "#527d69",
+      "bold 60px sans-serif",
+    );
+    panel.rotation.y = Math.PI;
   }
   label(
     cafe,

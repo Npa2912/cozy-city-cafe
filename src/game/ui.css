@@ -394,3 +394,109 @@
     font-size: 20px;
   }
 }
+.game-modal.cash-panel {
+  padding: 60px 24px 85px;
+}
+.cash-panel article {
+  width: min(560px, 100%);
+  padding: 13px 20px;
+}
+.cash-panel article h2 {
+  font-size: 22px;
+  margin: 0 0 10px;
+}
+.cash-panel article > header button {
+  padding: 6px 12px;
+}
+.cash-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 12px;
+}
+.cash-summary p {
+  display: block;
+  font-size: 11px;
+  margin: 2px 0;
+}
+.cash-summary b {
+  display: block;
+  font-size: 16px;
+  margin-top: 3px;
+}
+.cash-drawer {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+.game-modal button.banknote {
+  min-height: 59px;
+  padding: 7px 9px;
+}
+.banknote b {
+  font-size: 16px;
+}
+.banknote small {
+  display: none;
+}
+.selected-notes {
+  margin-top: 9px;
+  max-height: 40px;
+  overflow: auto;
+}
+.change-total {
+  margin: 8px 0 0;
+  font-size: 16px;
+}
+.change-diff {
+  margin: 2px 0 6px;
+  font-size: 11px;
+  color: #57795f;
+}
+.cash-panel button[data-action="confirm"] {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.cash-hint {
+  margin: 6px 0 0;
+  padding: 7px;
+  font-size: 11px;
+}
+@media (max-width: 700px) {
+  .game-modal.cash-panel {
+    padding: 145px 8px 145px;
+  }
+  .cash-panel article {
+    padding: 10px 13px;
+  }
+  .cash-summary {
+    gap: 4px;
+    padding: 7px;
+  }
+  .cash-summary p {
+    font-size: 10px;
+  }
+  .cash-summary b {
+    font-size: 13px;
+  }
+  .cash-drawer {
+    gap: 4px;
+  }
+  .game-modal button.banknote {
+    padding: 7px 5px;
+  }
+  .banknote span {
+    font-size: 7px;
+  }
+  .banknote b {
+    font-size: 12px;
+  }
+  .cash-panel article h2 {
+    font-size: 19px;
+  }
+  .cash-panel button:not(.banknote) {
+    font-size: 10px;
+    padding: 7px 8px;
+  }
+}

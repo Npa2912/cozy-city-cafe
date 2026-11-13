@@ -431,3 +431,83 @@ test("v1 migration backs up source, converts xu to VND, preserves EXP/claims and
   assert.equal(store.getItem(LEGACY_KEY), text);
   assert.equal(migrateV1("bad"), null);
 });
+
+test("takeaway continues along the sidewalk before completing the order", () => {
+  const g = setup();
+  g.layout = { ...layout, departure: { x: 2, z: 14 } };
+  g.seats.forEach((s) => {
+    s.status = "OCCUPIED";
+    s.customer = 99 + s.id;
+  });
+  g.startOrder(1);
+  const o = brew(g);
+  settle(g, o);
+  let seen = false;
+  for (let i = 0; i < 500; i++) {
+    g.update(0.05, move, () => true);
+    const n = g.customers[0];
+    if (n?.state === "WALKING_AWAY") {
+      seen = true;
+      assert(n.pickedUp);
+      assert.equal(o.status, "PAID");
+      break;
+    }
+  }
+  assert(seen);
+  tick(g, 20);
+  assert.equal(o.status, "COMPLETED");
+  assert.equal(g.customers.length, 0);
+});
+test("opening the same cash drawer never re-rolls tender or loses selected notes", () => {
+  const g = setup();
+  g.startOrder(1);
+  const o = brew(g),
+    tender = o.tender;
+  g.openCash(1);
+  g.addNote(1000);
+  g.random = () => 0;
+  assert(g.openCash(1));
+  assert.equal(o.tender, tender);
+  assert.deepEqual(g.register.notes, [1000]);
+});
+test("a full backup store does not erase or hide safely convertible v1 money", () => {
+  const old = JSON.stringify({
+    version: 1,
+    data: {
+      account: {
+        cash: 95,
+        xp: 4,
+        revenue: 0,
+        costs: 5,
+        stats: {},
+        claimed: [],
+        history: [],
+      },
+    },
+  });
+  const storage = {
+    getItem: (k) => (k === LEGACY_KEY ? old : null),
+    setItem() {
+      throw Error("quota");
+    },
+  };
+  const migrated = loadGame(storage);
+  assert.equal(migrated.account.cash, 95000);
+  assert.equal(storage.getItem(LEGACY_KEY), old);
+});
+
+test("door stays open for customers inside, permits closing when empty, and guards its swing", () => {
+  const g = new CafeGame(layout);
+  assert(!g.toggleDoor(false));
+  assert(!g.doorOpen);
+  assert(g.toggleDoor());
+  g.customers = [{ state: "SITTING_AND_DRINKING" }];
+  assert(!g.toggleDoor());
+  assert(g.doorOpen);
+  g.toggleBusiness();
+  g.toggleBusiness();
+  assert(!g.business);
+  g.customers[0].state = "WALKING_AWAY";
+  assert(g.toggleDoor());
+  assert(!g.doorOpen);
+});

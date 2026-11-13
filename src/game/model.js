@@ -67,6 +67,28 @@ export class CafeGame {
     n.age = 0;
     this.touch();
   }
+  toggleDoor(clear = true) {
+    if (!clear)
+      return this.notify("Có người trong vùng cửa, hãy lùi khỏi ngưỡng cửa.");
+    if (
+      this.doorOpen &&
+      this.customers.some(
+        (n) =>
+          ![
+            "WALKING_TO_SHOP",
+            "WAITING_AT_ENTRANCE",
+            "WALKING_AWAY",
+            "COMPLETED",
+          ].includes(n.state),
+      )
+    )
+      return this.notify(
+        "Còn khách bên trong: giữ cửa mở để khách ra. Nhấn O để ngừng nhận khách mới.",
+      );
+    this.doorOpen = !this.doorOpen;
+    this.touch();
+    return true;
+  }
   toggleBusiness() {
     this.business = !this.business;
     this.touch();

@@ -76,7 +76,7 @@ export function gameUI(model, command, onModal) {
       const due = o.tender - r.price,
         total = selectedTotal(reg.notes),
         hint = notesFor(due);
-      return `<h2>Thối tiền cho ${esc(model.customers.find((n) => n.id === o.customer)?.name || "khách")}</h2><div class="cash-summary"><p>${r.name}<b>${money(r.price)}</b></p><p>Khách đưa<b>${money(o.tender)}</b></p>${model.settings.easyChange ? `<p>Cần thối<b>${money(due)}</b></p>` : ""}</div><div class="cash-drawer">${DENOMINATIONS.map((n, i) => `<button class="banknote note-${i}" data-action="note" data-id="${n}"><span>VIỆT NAM</span><b>${money(n)}</b><small>Chọn 1 tờ</small></button>`).join("")}</div><div class="selected-notes">${reg.notes.map((n) => `<span>${money(n)}</span>`).join("") || "Chưa chọn tờ tiền nào"}</div><p class="change-total">Đã chọn <strong>${money(total)}</strong></p>${button("undo", "↶ Hoàn tác", "", !reg.notes.length)}${button("reset", "Làm lại", "", !reg.notes.length)}${model.settings.easyChange ? button("hint", "Gợi ý cách thối") : ""}${button("confirm", "XÁC NHẬN THỐI TIỀN", o.customer, total !== due || model.account.cash < due)}${model.cashHint ? `<p class="cash-hint">${due === 0 ? "Khách đưa đúng tiền, không cần thối." : hint.map(money).join(" + ")} · Bạn vẫn cần tự chọn các tờ tiền.</p>` : ""}`;
+      return `<h2>Thối tiền cho ${esc(model.customers.find((n) => n.id === o.customer)?.name || "khách")}</h2><div class="cash-summary"><p>${r.name}<b>${money(r.price)}</b></p><p>Khách đưa<b>${money(o.tender)}</b></p>${model.settings.easyChange ? `<p>Cần thối<b>${money(due)}</b></p>` : ""}</div><div class="cash-drawer">${DENOMINATIONS.map((n, i) => `<button class="banknote note-${i}" data-action="note" data-id="${n}"><span>VIỆT NAM</span><b>${money(n)}</b><small>Chọn 1 tờ</small></button>`).join("")}</div><div class="selected-notes">${reg.notes.map((n) => `<span>${money(n)}</span>`).join("") || "Chưa chọn tờ tiền nào"}</div><p class="change-total">Đã chọn <strong>${money(total)}</strong></p><p class="change-diff">${total === due ? "✓ Đã đủ tiền thối" : model.settings.easyChange ? `${total < due ? "Còn thiếu" : "Đang dư"} ${money(Math.abs(total - due))}` : "Số tiền chưa khớp."}</p>${button("undo", "↶ Hoàn tác", "", !reg.notes.length)}${button("reset", "Làm lại", "", !reg.notes.length)}${model.settings.easyChange ? button("hint", "Gợi ý cách thối") : ""}${button("confirm", "XÁC NHẬN THỐI TIỀN", o.customer, total !== due || model.account.cash < due)}${model.cashHint ? `<p class="cash-hint">${due === 0 ? "Khách đưa đúng tiền, không cần thối." : hint.map(money).join(" + ")} · Bạn vẫn cần tự chọn các tờ tiền.</p>` : ""}`;
     }
     if (panel === "quests")
       return `<h2>Nhiệm vụ nhỏ</h2>${QUESTS.map((q) => {
@@ -94,6 +94,7 @@ export function gameUI(model, command, onModal) {
     return "<h2>ANTELEO</h2><p>Chọn đơn ở màn hình, rồi theo dấu chỉ dẫn.</p>";
   }
   function render() {
+    modal.classList.toggle("cash-panel", panel === "cash");
     const a = model.account,
       free = model.seats.filter((s) => s.status === "AVAILABLE").length,
       waiting = model.orders.filter((o) =>

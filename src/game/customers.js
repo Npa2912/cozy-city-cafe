@@ -113,6 +113,7 @@ export function advanceCustomers(model, dt, move, canReach = () => true) {
           };
           if (v === 1) {
             releaseSeat(model, n);
+            n.pickedUp = false;
             model.transition(n, "LEAVING_SHOP");
           }
         }
@@ -120,13 +121,21 @@ export function advanceCustomers(model, dt, move, canReach = () => true) {
       }
       case "LEAVING_SHOP":
         if (move(n, model.layout.exit, dt)) {
-          if (order?.status === "PAID") order.status = "COMPLETED";
-          releaseQueue(model, n.id);
-          releaseSeat(model, n);
-          model.transition(n, "COMPLETED");
+          if (model.layout.departure) model.transition(n, "WALKING_AWAY");
+          else complete(model, n, order);
         }
+        break;
+      case "WALKING_AWAY":
+        if (move(n, model.layout.departure, dt)) complete(model, n, order);
         break;
     }
   }
   model.customers = model.customers.filter((n) => n.state !== "COMPLETED");
+}
+
+function complete(model, n, order) {
+  if (order?.status === "PAID") order.status = "COMPLETED";
+  releaseQueue(model, n.id);
+  releaseSeat(model, n);
+  model.transition(n, "COMPLETED");
 }

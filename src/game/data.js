@@ -140,6 +140,7 @@ export const STATES = [
   "WALKING_TO_TABLE",
   "SITTING_AND_DRINKING",
   "LEAVING_SHOP",
+  "WALKING_AWAY",
   "COMPLETED",
 ];
 export const money = (n) =>

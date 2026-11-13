@@ -158,13 +158,13 @@ export function createCafeGame({
   function interact() {
     if (!nearest) return;
     if (nearest.id === "door") {
-      if (!world.isDoorClear(camera.position, model.customers, !model.doorOpen))
-        model.notify("Có người trong vùng cửa, hãy lùi khỏi ngưỡng cửa.");
-      else {
-        model.doorOpen = !model.doorOpen;
+      if (
+        model.toggleDoor(
+          world.isDoorClear(camera.position, model.customers, !model.doorOpen),
+        )
+      ) {
         paths.clear();
         reachCache.clear();
-        model.touch();
         sound("beep");
       }
     } else if (!world.isStaff(camera.position))
