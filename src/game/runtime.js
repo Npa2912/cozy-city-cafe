@@ -49,6 +49,7 @@ export function createCafeGame({
     const s = world.stations.find((s) => s.id === id);
     return (
       s &&
+      (id === "door" || world.isStaff(camera.position)) &&
       Math.hypot(
         camera.position.x - s.position.x,
         camera.position.z - s.position.z,
@@ -128,6 +129,10 @@ export function createCafeGame({
   });
   function interact() {
     if (!nearest) return;
+    if (nearest.id !== "door" && !world.isStaff(camera.position)) {
+      model.notify("Đi vòng bên phải quầy vào lối nhân viên để dùng thiết bị.");
+      return;
+    }
     if (nearest.id === "door") {
       // Refuse either sweep if someone occupies the inner portal; the player can
       // operate the handle safely from both sides of the door.

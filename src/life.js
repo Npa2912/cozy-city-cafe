@@ -315,15 +315,6 @@ export function buildLife(scene, { cafe }) {
     heading: -Math.PI / 2,
     scale: 0.9,
   });
-  const barista = person(cafe, {
-    x: -3.8,
-    z: -3.95,
-    color: "#a7c5ae",
-    hair: "#493932",
-    scale: 0.95,
-  });
-  barista.g.position.y = 0.275;
-  box(barista.g, 0, 0.93, 0.14, 0.29, 0.42, 0.025, "#e8d6ad", 0.04);
   const paused = matchMedia("(prefers-reduced-motion: reduce)").matches;
   return {
     van: van.g,
@@ -354,7 +345,6 @@ export function buildLife(scene, { cafe }) {
             : 0);
       }
       if (!paused) {
-        barista.limbs[0].rotation.x = -0.4 + Math.sin(time * 1.6) * 0.15;
         shopper.g.rotation.y = Math.PI / 2 + Math.sin(time * 0.5) * 0.08;
         friend.g.rotation.y = -Math.PI / 2 + Math.sin(time * 0.4) * 0.12;
       }

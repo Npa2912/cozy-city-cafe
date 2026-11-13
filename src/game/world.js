@@ -70,11 +70,11 @@ export function cafeWorld(scene, cafe, camera) {
   }
   const stations = [
     ["door", "Cửa kính", -0.3, 1.04],
-    ["counter", "Nhận đơn / POS", -1.8, -2.15],
-    ["ingredients", "Nguyên liệu", -5.15, -2.15],
-    ["coffee", "Máy cà phê", -3.7, -2.15],
-    ["tea", "Máy lắc trà sữa", -2.4, -2.15],
-    ["delivery", "Giao đồ uống", -0.7, -2.15],
+    ["counter", "Order / két tiền", -0.9, -3.15],
+    ["ingredients", "Khu lấy ly", -5.15, -3.2],
+    ["coffee", "Máy cà phê", -3.7, -3.2],
+    ["tea", "Máy lắc trà sữa", -2.4, -3.2],
+    ["delivery", "Khay giao đồ", -0.7, -3.2],
   ].map(([id, name, x, z]) => ({ id, name, position: point(x, z, 1.3) }));
   for (const [name, x] of [
     ["NGUYÊN LIỆU", -5.1],
@@ -108,7 +108,7 @@ export function cafeWorld(scene, cafe, camera) {
     heldTea = buildDrink(held, "pearlTea");
   held.scale.setScalar(1.55);
   held.visible = false;
-  const machine = group(cafe, -3.7, 1.5, -2.45);
+  const machine = group(cafe, -3.7, 1.5, -3.15);
   machine.userData.dynamic = true;
   const steam = [];
   for (let i = 0; i < 4; i++)
@@ -129,13 +129,13 @@ export function cafeWorld(scene, cafe, camera) {
   const handoffCoffee = buildDrink(handoff, "black"),
     handoffTea = buildDrink(handoff, "pearlTea");
   handoff.visible = false;
-  const workingCup = group(cafe, -3.95, 1.22, -2.46);
+  const workingCup = group(cafe, -3.45, 1.22, -3.14);
   workingCup.userData.dynamic = true;
   cup(workingCup, 0, 0, 0, "#ead2a6");
   workingCup.visible = false;
   const stream = cylinder(
     machine,
-    -0.25,
+    0.25,
     -0.15,
     0,
     0.012,
@@ -144,7 +144,7 @@ export function cafeWorld(scene, cafe, camera) {
     "#80563c",
   );
   stream.visible = false;
-  const shaker = group(cafe, -2.4, 1.22, -2.55);
+  const shaker = group(cafe, -2.4, 1.22, -3.1);
   shaker.userData.dynamic = true;
   cylinder(shaker, 0, 0.23, 0, 0.14, 0.11, 0.44, "#afc1b5");
   sphere(shaker, 0, 0.48, 0, 0.15, 0.07, 0.15, "#e0d8bb");
@@ -193,6 +193,10 @@ export function cafeWorld(scene, cafe, camera) {
   return {
     point,
     toLocal,
+    isStaff(p) {
+      const l = toLocal(p);
+      return l.z < -3.48 && l.z > -4.8 && l.x > -6.0 && l.x < 0.8;
+    },
     stations,
     seats,
     obstacles,

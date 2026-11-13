@@ -460,8 +460,8 @@ function cafeInterior(cafe) {
   const equipment = group(cafe, 0, -0.6, 0.7);
   equipment.name = "cafe-equipment";
   box(equipment, -3.3, 1.75, -3.5, 5.4, 0.13, 1.3, "#e9d5b0", 0.07);
-  for (let j = 0; j < 3; j++) {
-    for (let i = 0; i < 4; i++)
+  for (let j = 0; j < 2; j++) {
+    for (let i = 0; i < 3; i++)
       cup(
         cafe,
         -5.2 + i * 0.74,
@@ -510,9 +510,10 @@ function cafeInterior(cafe) {
     3.35,
     0.88,
   );
+  const coffeeRig = group(equipment);
   // Espresso machine: group head, steam wand, hopper, gauges, handles and drip tray.
   box(
-    equipment,
+    coffeeRig,
     -3.7,
     2.13,
     -3.55,
@@ -522,10 +523,10 @@ function cafeInterior(cafe) {
     mat("#bfc6bc", { metalness: 0.65, roughness: 0.28 }),
     0.1,
   );
-  box(equipment, -3.7, 2.34, -3.19, 0.93, 0.23, 0.1, "#f0e3bd", 0.05);
+  box(coffeeRig, -3.7, 2.34, -3.19, 0.93, 0.23, 0.1, "#f0e3bd", 0.05);
   for (const xx of [-3.95, -3.5]) {
     const gauge = cylinder(
-      equipment,
+      coffeeRig,
       xx,
       2.36,
       -3.12,
@@ -536,13 +537,13 @@ function cafeInterior(cafe) {
       20,
     );
     gauge.rotation.x = Math.PI / 2;
-    rod(equipment, [xx, 2.12, -3.2], [xx, 2.03, -2.98], 0.03, "#425452");
+    rod(coffeeRig, [xx, 2.12, -3.2], [xx, 2.03, -2.98], 0.03, "#425452");
     // The gameplay cup is placed under this spout while extraction runs.
   }
-  box(equipment, -3.7, 1.8, -3.16, 1.03, 0.06, 0.3, "#66746b", 0.025);
+  box(coffeeRig, -3.7, 1.8, -3.16, 1.03, 0.06, 0.3, "#66746b", 0.025);
   for (let i = 0; i < 9; i++)
     box(
-      equipment,
+      coffeeRig,
       -4.13 + i * 0.1,
       1.84,
       -3.16,
@@ -552,6 +553,10 @@ function cafeInterior(cafe) {
       "#c3c9b9",
       0.004,
     );
+  coffeeRig.position.set(-3.7, 0, -3.5);
+  coffeeRig.rotation.y = Math.PI;
+  for (const part of coffeeRig.children)
+    part.position.sub(new THREE.Vector3(-3.7, 0, -3.5));
   cylinder(equipment, -4.7, 2.22, -3.6, 0.15, 0.11, 0.45, "#b4c8bc");
   sphere(
     equipment,
@@ -602,11 +607,11 @@ function cafeInterior(cafe) {
   // Bubble-tea sealer, blender and transparent ingredient jars.
   box(equipment, -2.4, 2.05, -3.5, 0.48, 0.5, 0.52, "#c6b5be", 0.07);
   cylinder(equipment, -2.4, 2.36, -3.5, 0.15, 0.15, 0.12, "#e5c6cc");
-  cup(equipment, -2.4, 1.85, -3.23, "#c3a278", true);
-  cylinder(equipment, -1.9, 2.0, -3.5, 0.16, 0.2, 0.25, "#9bb8a8");
+  // Functional cup/shaker appears only while the guided step is running.
+  cylinder(equipment, -2.9, 2.0, -3.5, 0.16, 0.2, 0.25, "#9bb8a8");
   cylinder(
     equipment,
-    -1.9,
+    -2.9,
     2.28,
     -3.5,
     0.15,
@@ -614,10 +619,11 @@ function cafeInterior(cafe) {
     0.35,
     mat("#eadab9", { transparent: true, opacity: 0.65 }),
   );
-  cylinder(equipment, -1.9, 2.47, -3.5, 0.16, 0.16, 0.04, "#6d8e7c");
+  cylinder(equipment, -2.9, 2.47, -3.5, 0.16, 0.16, 0.04, "#6d8e7c");
+  const jars = group(equipment, 0, 0.48, -1.66);
   for (let i = 0; i < 4; i++) {
     cylinder(
-      equipment,
+      jars,
       -5.5 + i * 0.26,
       2.02,
       -3.5,
@@ -626,7 +632,7 @@ function cafeInterior(cafe) {
       0.38,
       mat(["#e5bb8c", "#c8aa7b", "#e6d0a0", "#cb9695"][i], { roughness: 0.35 }),
     );
-    cylinder(equipment, -5.5 + i * 0.26, 2.23, -3.5, 0.1, 0.1, 0.05, "#ae9270");
+    cylinder(jars, -5.5 + i * 0.26, 2.23, -3.5, 0.1, 0.1, 0.05, "#ae9270");
   }
   label(
     cafe,

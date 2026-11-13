@@ -34,6 +34,9 @@ function roundedPath(x, y, w, h, r = 0.18) {
   return p;
 }
 function pos(cafe) {
+  const root = cafe;
+  cafe = group(root, 0.9, 0, -0.25);
+  cafe.name = "staff-pos-assembly";
   const g = group(cafe, P.pos.x, P.pos.y, P.pos.z);
   g.name = "cashier-pos-terminal";
   g.scale.setScalar(0.65);
@@ -95,7 +98,7 @@ function pos(cafe) {
     512,
     288,
   );
-  cafe.userData.posDisplays = { order, customer };
+  root.userData.posDisplays = { order, customer };
   mesh(
     screen,
     new THREE.PlaneGeometry(0.52, 0.3),
@@ -111,7 +114,8 @@ function pos(cafe) {
   );
   // Card/NFC terminal, printer, receipt and cash drawer have separate supports.
   const card = group(cafe, -2.26, 1.225, -2.34);
-  card.rotation.x = -0.16;
+  card.rotation.x = 0.16;
+  card.rotation.y = Math.PI;
   box(card, 0, 0.065, 0, 0.23, 0.13, 0.29, "#486a63", 0.035);
   box(
     card,
