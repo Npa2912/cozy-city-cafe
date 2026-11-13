@@ -164,7 +164,12 @@ function pos(cafe) {
       "#9aab93",
       0.001,
     );
-  box(cafe, -1.8, 1.045, -2.3, 0.6, 0.16, 0.38, "#5e786b", 0.04);
+  const drawer = group(cafe, -1.8, 1.045, -2.3);
+  drawer.userData.dynamic = true;
+  root.userData.cashDrawer = drawer;
+  box(drawer, 0, 0, 0, 0.6, 0.16, 0.38, "#5e786b", 0.04);
+  for (const x of [-0.16, 0, 0.16])
+    box(drawer, x, 0.095, 0, 0.12, 0.012, 0.2, "#b1c9aa", 0.01);
   box(cafe, -1.8, 1.04, -2.1, 0.16, 0.025, 0.02, "#b5be9d", 0.008);
   label(
     cafe,

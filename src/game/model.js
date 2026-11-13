@@ -1,60 +1,71 @@
-import { acceptOrder, serveDrink } from "./orders.js";
-import { admitCustomer, advanceCustomers } from "./customers.js";
-import { claimQuest } from "./quests.js";
-import { ACTIONS, CONFIG } from "./data.js";
+import { CONFIG } from "./data.js";
 import { newAccount } from "./economy.js";
-import { prepare, advanceCraft } from "./crafting.js";
-import { pay } from "./payments.js";
+import { admitCustomer, advanceCustomers } from "./customers.js";
+import { startOrder, cancelOrder } from "./orders.js";
+import { performStep, advanceCraft } from "./crafting.js";
+import { openRegister, confirmPayment } from "./payments.js";
+import { selectNote } from "./cash-register.js";
+import { claimQuest } from "./quests.js";
 export class CafeGame {
-  constructor(layout, saved = null) {
+  constructor(layout, saved = null, random = Math.random) {
     this.layout = layout;
+    this.random = random;
     this.account = saved?.account || newAccount();
-    this.seats = layout.seats.map((s, i) => ({
+    this.seats = layout.seats.map((s, id) => ({
       ...s,
-      id: i,
+      id,
       status: "AVAILABLE",
     }));
     this.customers = [];
+    this.queue = [];
     this.orders = [];
+    this.activeOrder = null;
+    this.register = null;
+    this.craft = null;
+    this.job = null;
     this.nextId = 1;
     this.business = false;
     this.doorOpen = false;
-    this.craft = null;
-    this.job = null;
     this.clock = 0;
     this.spawnClock = 0;
-    this.cleaning = null;
+    this.settings = { staticHighlight: false, easyChange: true };
     this.revision = 0;
-    this.message = "Mở cửa bằng E, rồi chọn Mở bán.";
-    if (saved) {
-      for (const key of [
-        "seats",
-        "customers",
-        "orders",
-        "nextId",
-        "business",
-        "doorOpen",
-        "craft",
-        "job",
-        "clock",
-        "spawnClock",
-        "cleaning",
-      ])
+    this.message = "E mở cửa · O mở bán · Đi vòng bên phải vào lối nhân viên.";
+    if (saved)
+      for (const key of this.saveKeys())
         if (saved[key] !== undefined) this[key] = saved[key];
-    }
+  }
+  saveKeys() {
+    return [
+      "account",
+      "seats",
+      "customers",
+      "queue",
+      "orders",
+      "activeOrder",
+      "register",
+      "craft",
+      "job",
+      "nextId",
+      "business",
+      "doorOpen",
+      "clock",
+      "spawnClock",
+      "settings",
+    ];
   }
   touch() {
     this.revision++;
-  }
-  transition(n, state) {
-    n.state = state;
-    n.age = 0;
-    this.touch();
   }
   notify(message) {
     this.message = message;
     this.touch();
     return false;
+  }
+  transition(n, state) {
+    n.state = state;
+    n.age = 0;
+    this.touch();
   }
   toggleBusiness() {
     this.business = !this.business;
@@ -63,87 +74,57 @@ export class CafeGame {
   admit() {
     return admitCustomer(this);
   }
-  accept(id) {
-    return acceptOrder(this, id);
+  startOrder(id) {
+    return startOrder(this, id);
   }
-  action(action) {
-    const reason = prepare(this, action);
-    if (reason) return this.notify(reason);
-    this.message =
-      action === "finish"
-        ? "Ly đã đậy nắp. Mang đến khu giao đồ."
-        : `Đang chuẩn bị: ${ACTIONS[action].label}`;
-    return true;
+  cancel(id) {
+    return cancelOrder(this, id);
   }
-  discard() {
-    if (this.job) return this.notify("Chờ máy hoàn tất trước khi bỏ ly.");
-    this.craft = null;
-    this.touch();
+  interact(station) {
+    return performStep(this, station);
   }
-  serve() {
-    return serveDrink(this);
+  openCash(id) {
+    return openRegister(this, id);
+  }
+  addNote(note) {
+    if (!this.register) return false;
+    const ok = selectNote(this.register, note);
+    if (ok) this.touch();
+    return ok;
+  }
+  undoNote() {
+    if (this.register) {
+      this.register.notes.pop();
+      this.touch();
+    }
+  }
+  resetNotes() {
+    if (this.register) {
+      this.register.notes = [];
+      this.touch();
+    }
   }
   pay(id) {
-    const ok = pay(this, id);
-    if (!ok)
-      this.notify(
-        "Khách phải uống xong và đứng tại POS; đơn chỉ được thanh toán một lần.",
-      );
-    else this.message = "Đã thanh toán. Khách đang ra cửa.";
-    return ok;
+    return confirmPayment(this, id);
   }
   claim(id) {
     const ok = claimQuest(this.account, id);
     if (ok) this.touch();
     return ok;
   }
-  clean(id) {
-    const s = this.seats.find((s) => s.id === id);
-    if (!s || s.status !== "NEEDS_CLEANING" || this.cleaning) return false;
-    this.cleaning = { id, left: CONFIG.cleanSeconds };
-    this.touch();
-    return true;
-  }
-  update(dt, move) {
+  update(dt, move, canReach) {
     this.clock += dt;
     advanceCraft(this, dt);
-    if (this.cleaning) {
-      this.cleaning.left -= dt;
-      if (this.cleaning.left <= 0) {
-        const s = this.seats[this.cleaning.id];
-        s.status = "AVAILABLE";
-        delete s.customer;
-        this.cleaning = null;
-        this.account.stats.cleaned++;
-        this.account.xp += 2;
-        this.touch();
-      }
-    }
     this.spawnClock += dt;
     if (this.spawnClock >= CONFIG.spawnSeconds) {
       this.spawnClock = 0;
       this.admit();
     }
-    advanceCustomers(this, dt, move);
+    advanceCustomers(this, dt, move, canReach);
   }
-
   snapshot() {
     const out = {};
-    for (const k of [
-      "account",
-      "seats",
-      "customers",
-      "orders",
-      "nextId",
-      "business",
-      "doorOpen",
-      "craft",
-      "job",
-      "clock",
-      "spawnClock",
-      "cleaning",
-    ])
-      out[k] = this[k];
+    for (const k of this.saveKeys()) out[k] = this[k];
     return structuredClone(out);
   }
 }

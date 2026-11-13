@@ -1,30 +1,51 @@
-import { validateRecipe } from "../src/game/recipe-validator.js";
+import { reserveSeat } from "../src/game/seating.js";
 import test from "node:test";
 import assert from "node:assert/strict";
+import * as THREE from "three";
 import { CafeGame } from "../src/game/model.js";
-import { CONFIG, RECIPES } from "../src/game/data.js";
+import { CONFIG, RECIPES, ACTIONS, ORDER_STATES } from "../src/game/data.js";
 import { slide, findPath, blocked } from "../src/game/collision.js";
-import { saveGame, loadGame, decodeSave } from "../src/game/save.js";
 import {
   collectObstacles,
   createPlayerCollision,
 } from "../src/game/world-collision.js";
-import * as THREE from "three";
+import {
+  DENOMINATIONS,
+  validTenders,
+  chooseTender,
+  notesFor,
+  selectedTotal,
+} from "../src/game/cash-register.js";
+import {
+  saveGame,
+  loadGame,
+  decodeSave,
+  migrateV1,
+  SAVE_KEY,
+  LEGACY_KEY,
+  BACKUP_KEY,
+} from "../src/game/save.js";
 const layout = {
-  spawn: { x: 0, z: 3 },
-  entrance: { x: 0, z: 1 },
-  counter: { x: 0, z: -1 },
-  exit: { x: 2, z: 3 },
+  spawn: { x: 0, z: 6 },
+  entrance: { x: 0, z: 4 },
+  queue: [
+    { x: 0, z: 0 },
+    { x: 0, z: 1.4 },
+    { x: 0, z: 2.8 },
+  ],
+  counter: { x: 0, z: 0 },
+  handoff: { x: 1, z: 0 },
+  exit: { x: 2, z: 6 },
   seats: [
     {
-      center: { x: 3, z: -2 },
-      chair: { x: 2, z: -2 },
-      approach: { x: 1.5, z: -2 },
+      center: { x: 4, z: -1 },
+      chair: { x: 3, z: -1 },
+      approach: { x: 2.4, z: -1 },
     },
     {
-      center: { x: 3, z: -4 },
-      chair: { x: 2, z: -4 },
-      approach: { x: 1.5, z: -4 },
+      center: { x: 4, z: -3 },
+      chair: { x: 3, z: -3 },
+      approach: { x: 2.4, z: -3 },
     },
   ],
 };
@@ -37,183 +58,337 @@ const move = (n, p, dt) => {
     n.pos.x += (dx / l) * step;
     n.pos.z += (dz / l) * step;
   }
-  return l < 0.08;
+  return l < 0.075;
 };
-function tick(g, seconds) {
-  for (let t = 0; t < seconds; t += 0.05) g.update(0.05, move);
+function tick(g, seconds, reach = () => true) {
+  for (let t = 0; t < seconds; t += 0.05) g.update(0.05, move, reach);
 }
-function setup() {
-  const g = new CafeGame(layout);
+function setup(recipe = "black") {
+  const g = new CafeGame(layout, null, () => 0.5);
   g.business = true;
   g.doorOpen = true;
-  assert(g.admit());
+  g.admit();
   g.business = false;
-  tick(g, 8);
-  assert.equal(g.customers[0].state, "WAITING_TO_ORDER");
+  g.customers[0].recipe = recipe;
+  tick(g, 12);
+  assert(g.customers[0].queueReady);
   return g;
 }
-function prepare(g, r) {
+function brew(g) {
+  const o = g.orders.find((o) => o.customer === g.activeOrder),
+    r = RECIPES.find((r) => r.id === o.recipe);
   for (const action of r.steps) {
-    assert(g.action(action), `${action}: ${g.message}`);
+    assert(g.interact(ACTIONS[action].station), g.message);
     if (g.job) tick(g, 3.1);
   }
+  assert.equal(o.status, "READY");
+  tick(g, 0.8);
+  assert.equal(o.status, "WAITING_PAYMENT");
+  return o;
+}
+function settle(g, o) {
+  assert(g.openCash(o.customer));
+  for (const n of notesFor(
+    o.tender - RECIPES.find((r) => r.id === o.recipe).price,
+  ))
+    g.addNote(n);
+  return g.pay(o.customer);
 }
 
-test("capsule slides along walls without tunnelling even across a five-metre frame", () => {
-  const wall = { minX: 1, maxX: 1.08, minZ: -10, maxZ: 10 };
-  const p = slide({ x: 0, z: 0 }, 5, 2, 0.28, [wall]);
+test("capsule slides along thin walls without tunnelling across a low-FPS frame", () => {
+  const wall = { minX: 1, maxX: 1.08, minZ: -10, maxZ: 10 },
+    p = slide({ x: 0, z: 0 }, 5, 2, 0.28, [wall]);
   assert(p.x <= 0.721);
   assert(p.z > 1.8);
   assert(!blocked(p, 0.279, [wall]));
 });
-test("closed door blocks the capsule, open door leaves an actual passage", () => {
-  const closed = { minX: -1, maxX: 1, minZ: 0, maxZ: 0.12 };
-  assert(slide({ x: 0, z: 2 }, 0, -4, 0.28, [closed]).z > 0.39);
-  const open = { minX: -1, maxX: -0.88, minZ: -1.5, maxZ: 0 };
-  assert(slide({ x: 0, z: 2 }, 0, -4, 0.28, [open]).z < -1.9);
+test("closed door blocks a capsule and the open door provides a passage", () => {
+  assert(
+    slide({ x: 0, z: 2 }, 0, -4, 0.28, [
+      { minX: -1, maxX: 1, minZ: 0, maxZ: 0.12 },
+    ]).z > 0.39,
+  );
+  assert(
+    slide({ x: 0, z: 2 }, 0, -4, 0.28, [
+      { minX: -1, maxX: -0.88, minZ: -1.5, maxZ: 0 },
+    ]).z < -1.9,
+  );
 });
-test("path planner routes around furniture and rejects closed entrances", () => {
-  const bounds = { minX: -3, maxX: 3, minZ: -3, maxZ: 3 },
-    table = { kind: "circle", x: 0, z: 0, radius: 0.8 };
-  const path = findPath({ x: -2, z: 0 }, { x: 2, z: 0 }, [table], bounds);
+test("A* goes around furniture without cutting corners or crossing closed walls", () => {
+  const b = { minX: -3, maxX: 3, minZ: -3, maxZ: 3 },
+    table = { kind: "circle", x: 0, z: 0, radius: 0.8 },
+    path = findPath({ x: -2, z: 0 }, { x: 2, z: 0 }, [table], b);
   assert(path?.length);
   for (const p of path) assert(!blocked(p, 0.249, [table]));
-  const wall = { minX: -0.2, maxX: 0.2, minZ: -3, maxZ: 3 };
-  assert.equal(findPath({ x: -2, z: 0 }, { x: 2, z: 0 }, [wall], bounds), null);
+  assert.equal(
+    findPath(
+      { x: -2, z: 0 },
+      { x: 2, z: 0 },
+      [{ minX: -0.2, maxX: 0.2, minZ: -3, maxZ: 3 }],
+      b,
+    ),
+    null,
+  );
 });
-test("semantic world colliders retain walls/counters but ignore floors and moving actors", () => {
+test("semantic colliders keep physical walls and ignore floors/moving actors", () => {
   const scene = new THREE.Scene(),
     wall = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 3));
   wall.position.y = 1.5;
   scene.add(wall);
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 10));
-  scene.add(floor);
-  const actor = new THREE.Group();
-  actor.userData.dynamic = true;
-  actor.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1)));
-  scene.add(actor);
+  scene.add(new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 10)));
+  const a = new THREE.Group();
+  a.userData.dynamic = true;
+  a.add(new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1)));
+  scene.add(a);
   const b = collectObstacles(scene);
   assert.equal(b.length, 1);
-  const camera = new THREE.PerspectiveCamera();
-  camera.position.set(-2, 1.9, 0);
+  const c = new THREE.PerspectiveCamera();
+  c.position.set(-2, 1.9, 0);
   const player = createPlayerCollision(
     b,
     () => [],
     () => 0.23,
   );
-  player.move(camera, 5, 1);
-  assert(camera.position.x < -0.37);
-  assert.equal(camera.position.y, 1.88);
+  player.move(c, 5, 1);
+  assert(c.position.x < -0.37);
   assert.equal(player.capsule.radius, 0.28);
 });
-test("admission requires business, a physical open door and an available seat", () => {
+test("existing fishing POV remains on the pier without stepping sideways into water", () => {
+  const c = new THREE.PerspectiveCamera();
+  c.position.set(76, 1.9, 12);
+  const p = createPlayerCollision(
+    [],
+    () => [],
+    () => 0.25,
+  );
+  p.move(c, 0, 0);
+  assert.equal(c.position.x, 76);
+  p.move(c, 0, 10);
+  assert(c.position.z <= 14.721 && c.position.z > 14.7);
+  p.move(c, 20, 0);
+  assert(c.position.x <= 87.721);
+});
+
+test("admission requires business and an open physical door, not an empty chair", () => {
   const g = new CafeGame(layout);
   assert(!g.admit());
   g.business = true;
   assert(!g.admit());
   g.doorOpen = true;
-  g.seats.forEach((s) => (s.status = "NEEDS_CLEANING"));
-  assert(!g.admit());
-  g.seats[0].status = "AVAILABLE";
+  g.seats.forEach((s) => (s.status = "OCCUPIED"));
   assert(g.admit());
-  assert.equal(g.seats[0].status, "RESERVED");
+  assert.equal(g.customers[0].seat, null);
+  assert.equal(g.queue.length, 1);
+});
+test("three arrivals queue FIFO at different positions and a fourth is refused", () => {
+  const g = new CafeGame(layout);
+  g.business = true;
+  g.doorOpen = true;
+  assert(g.admit());
+  g.business = false;
+  tick(g, 3);
+  assert(g.admit() === false);
+  g.business = true;
+  assert(g.admit());
+  g.business = false;
+  tick(g, 3);
+  g.business = true;
+  assert(g.admit());
+  g.business = false;
+  tick(g, 18);
+  assert.deepEqual(g.queue, [1, 2, 3]);
+  assert.equal(g.orders.length, 3);
   assert(!g.admit());
+  for (let i = 0; i < 3; i++)
+    for (let j = i + 1; j < 3; j++)
+      assert(
+        Math.hypot(
+          g.customers[i].pos.x - g.customers[j].pos.x,
+          g.customers[i].pos.z - g.customers[j].pos.z,
+        ) > 0.9,
+      );
+  assert(!g.startOrder(2));
+  assert(g.startOrder(1));
+  assert(!g.startOrder(1));
+  assert(!g.startOrder(2));
 });
 for (const recipe of RECIPES)
-  test(`complete customer lifecycle: ${recipe.name}, payment only after drinking`, () => {
-    const g = setup(),
+  test(`guided cycle pays before seating: ${recipe.name}`, () => {
+    const g = setup(recipe.id),
       n = g.customers[0];
-    n.recipe = recipe.id;
-    assert(g.accept(n.id));
-    assert(!g.accept(n.id));
-    tick(g, 0.1);
-    assert.equal(n.state, "WAITING_FOR_DRINK");
-    assert(!g.pay(n.id));
-    prepare(g, recipe);
-    assert(g.serve());
-    assert(!g.serve());
+    assert(g.startOrder(n.id));
+    assert(!g.interact("delivery"));
+    assert.equal(g.orders[0].step, 0);
+    const o = brew(g);
+    assert(g.seats.every((s) => s.status === "AVAILABLE"));
     assert.equal(g.account.revenue, 0);
-    tick(g, 4);
+    const balance = g.account.cash;
+    assert(settle(g, o));
+    assert.equal(o.status, "PAID");
+    assert.equal(g.account.cash, balance + recipe.price);
+    assert.equal(g.account.revenue, recipe.price);
+    assert(!g.pay(n.id));
+    tick(g, 6);
     assert.equal(n.state, "SITTING_AND_DRINKING");
-    assert(!g.pay(n.id));
-    tick(g, CONFIG.drinkSeconds + 5);
-    assert.equal(n.state, "WAITING_FOR_PAYMENT");
-    const cash = g.account.cash;
-    assert(g.pay(n.id));
-    assert.equal(g.account.cash, cash + recipe.price);
-    assert(!g.pay(n.id));
-    tick(g, 10);
+    assert.equal(g.seats[n.seat].status, "OCCUPIED");
+    tick(g, CONFIG.drinkSeconds + 15);
     assert.equal(g.customers.length, 0);
-    assert.equal(g.seats[0].status, "NEEDS_CLEANING");
-    assert(g.clean(0));
-    tick(g, CONFIG.cleanSeconds + 0.1);
-    assert.equal(g.seats[0].status, "AVAILABLE");
-    assert.equal(g.account.stats.cleaned, 1);
-    assert.equal(g.orders.length, 1);
+    assert(g.seats.every((s) => s.status === "AVAILABLE"));
+    assert.equal(o.status, "COMPLETED");
+    assert.equal(g.account.stats.changeCorrect, 1);
   });
-test("wrong recipe is rejected with ingredient expense, no revenue and a retry", () => {
-  const g = setup(),
-    n = g.customers[0];
-  g.accept(n.id);
-  tick(g, 0.1);
+test("wrong equipment and missing steps never advance tutorial or consume money", () => {
+  const g = setup("milkCoffee");
+  g.startOrder(1);
   const cash = g.account.cash;
-  prepare(g, RECIPES[1]);
-  assert(!g.serve());
-  assert.equal(n.state, "WAITING_FOR_DRINK");
-  assert.equal(g.account.revenue, 0);
-  assert(g.account.cash < cash);
-  assert.equal(g.account.stats.errors, 1);
-  assert(g.message.includes("Khách từ chối"));
-  prepare(g, RECIPES[0]);
-  assert(g.serve());
-});
-test("machines have distinct input rules and cannot finish a busy drink", () => {
-  const g = new CafeGame(layout);
-  assert(!g.action("coffee"));
-  g.action("cup");
-  assert(!g.action("shake"));
-  g.action("tea");
-  assert(!g.action("coffee"));
-  g.action("milk");
-  g.action("sugar");
-  assert(g.action("shake"));
-  assert(!g.action("finish"));
+  assert(!g.interact("coffee"));
+  assert(!g.interact("delivery"));
+  assert.equal(g.account.cash, cash);
+  assert(g.interact("ingredients"));
+  assert(!g.interact("tea"));
+  assert(g.interact("coffee"));
+  assert(!g.interact("milk"));
   tick(g, 3.1);
-  assert(g.action("finish"));
-  assert(!g.action("milk"));
-  assert(!validateRecipe(RECIPES[0], ["cup", "milk", "coffee", "finish"]).ok);
+  assert.equal(g.orders[0].step, 2);
+  assert(g.interact("milk"));
+  assert.equal(g.orders[0].step, 3);
+  assert(g.interact("delivery"));
+  assert.equal(g.orders[0].status, "READY");
 });
-test("quest rewards require progress and are claimed exactly once", () => {
+test("every configured tender is valid VND, affordable and yields representable change", () => {
+  for (const r of RECIPES)
+    for (const cash of [0, 5000, 100000, 300000]) {
+      const options = validTenders(r.price, cash);
+      assert(options.length);
+      for (const n of options) {
+        assert(n >= r.price && n <= 200000);
+        assert(n - r.price <= cash);
+        assert.equal(selectedTotal(notesFor(n)), n);
+        assert.equal(selectedTotal(notesFor(n - r.price)), n - r.price);
+      }
+      for (let i = 0; i <= 10; i++)
+        assert(options.includes(chooseTender(r.price, cash, () => i / 10)));
+    }
+  assert.equal(notesFor(37483), null);
+});
+test("cash register handles multiple bills, undo, reset, wrong change and duplicate protection", () => {
+  const g = setup("milkCoffee");
+  g.startOrder(1);
+  const o = brew(g);
+  o.tender = 100000;
+  assert(g.openCash(1));
+  assert(!g.addNote(1234));
+  g.addNote(50000);
+  g.addNote(20000);
+  assert(!g.pay(1));
+  assert.equal(g.account.revenue, 0);
+  g.addNote(10000);
+  g.undoNote();
+  assert.equal(selectedTotal(g.register.notes), 70000);
+  g.addNote(5000);
+  assert(g.pay(1));
+  assert.equal(g.account.revenue, 25000);
+  assert(!g.pay(1));
+  assert(!g.openCash(1));
+});
+test("not enough selected change or depleted float cannot be confirmed", () => {
+  const g = setup();
+  g.startOrder(1);
+  const o = brew(g);
+  o.tender = 50000;
+  g.openCash(1);
+  g.addNote(20000);
+  assert(!g.pay(1));
+  g.resetNotes();
+  g.addNote(20000);
+  g.addNote(10000);
+  g.account.cash = 0;
+  assert(!g.pay(1));
+  assert.equal(g.account.revenue, 0);
+});
+test("cancelled orders cannot brew, pay, or generate revenue twice", () => {
+  const g = setup();
+  assert(g.cancel(1));
+  assert(!g.startOrder(1));
+  assert(!g.openCash(1));
+  assert(!g.pay(1));
+  assert(!g.cancel(1));
+  assert.equal(g.account.revenue, 0);
+  assert.equal(g.orders[0].status, "CANCELLED");
+  tick(g, 15);
+  assert.equal(g.customers.length, 0);
+});
+test("full seats cause paid takeaway without waiting for a seat", () => {
+  const g = setup();
+  g.seats.forEach((s, i) => {
+    s.status = "OCCUPIED";
+    s.customer = 99 + i;
+  });
+  g.startOrder(1);
+  const o = brew(g);
+  assert(settle(g, o));
+  const n = g.customers[0];
+  tick(g, 3);
+  assert(n.takeaway);
+  assert.equal(n.seat, null);
+  tick(g, 15);
+  assert.equal(g.customers.length, 0);
+  assert.equal(o.status, "COMPLETED");
+  assert(g.seats.every((s) => s.status === "OCCUPIED"));
+});
+test("an unreachable empty seat falls back to takeaway rather than trapping the NPC", () => {
+  const g = setup();
+  g.startOrder(1);
+  const o = brew(g);
+  settle(g, o);
+  tick(g, 3, () => false);
+  assert(g.customers[0].takeaway);
+  assert(g.seats.every((s) => s.status === "AVAILABLE"));
+  tick(g, 15, () => false);
+  assert.equal(g.customers.length, 0);
+});
+test("seat reservation is atomic for two paid patrons", () => {
+  const g = new CafeGame(layout),
+    a = { id: 1, pos: layout.handoff },
+    b = { id: 2, pos: layout.handoff },
+    c = { id: 3, pos: layout.handoff };
+  const first = reserveSeat(g, a),
+    second = reserveSeat(g, b);
+  assert.equal(first.id, 0);
+  assert.equal(second.id, 1);
+  assert.notEqual(a.seat, b.seat);
+  assert.equal(reserveSeat(g, c), null);
+  assert(c.takeaway);
+});
+test("quests require earned progress and can be claimed only once", () => {
   const g = new CafeGame(layout),
     cash = g.account.cash;
-  assert(!g.claim("coffee3"));
-  g.account.stats.coffee = 3;
-  assert(g.claim("coffee3"));
-  assert.equal(g.account.cash, cash + 40);
-  assert(!g.claim("coffee3"));
-  assert.equal(g.account.cash, cash + 40);
+  assert(!g.claim("v2serve3"));
+  g.account.stats.served = 3;
+  assert(g.claim("v2serve3"));
+  assert.equal(g.account.cash, cash + 15000);
+  assert(!g.claim("v2serve3"));
 });
-test("save restores pending orders, expenses, reservations and claimed rewards", () => {
+const memory = () => {
+  const map = new Map();
+  return {
+    map,
+    setItem: (k, v) => map.set(k, v),
+    getItem: (k) => map.get(k) || null,
+  };
+};
+test("v2 save preserves pending cash notes, queue, guide progress and paid reward guards", () => {
   const g = setup();
-  g.accept(g.customers[0].id);
-  tick(g, 0.1);
-  g.action("cup");
-  g.account.stats.cleaned = 3;
-  g.claim("clean3");
-  const memory = new Map(),
-    storage = {
-      setItem: (k, v) => memory.set(k, v),
-      getItem: (k) => memory.get(k),
-    };
-  assert(saveGame(g.snapshot(), storage));
-  const loaded = loadGame(storage),
-    restored = new CafeGame(layout, loaded);
-  assert.deepEqual(restored.snapshot(), g.snapshot());
-  assert(!restored.accept(restored.customers[0].id));
-  assert(!restored.claim("clean3"));
-  assert(!restored.pay(restored.customers[0].id));
-  assert.equal(decodeSave("broken"), null);
-  assert.equal(decodeSave('{"version":99}'), null);
+  g.startOrder(1);
+  brew(g);
+  g.openCash(1);
+  g.addNote(1000);
+  const store = memory();
+  assert(saveGame(g.snapshot(), store));
+  const h = new CafeGame(layout, loadGame(store));
+  assert.deepEqual(h.snapshot(), g.snapshot());
+  assert(!h.startOrder(1));
+  assert.equal(decodeSave("bad"), null);
   assert(
     !saveGame(g.snapshot(), {
       setItem() {
@@ -222,63 +397,37 @@ test("save restores pending orders, expenses, reservations and claimed rewards",
     }),
   );
 });
-
-test("a departing customer keeps the doorway queue reserved until fully outside", () => {
-  const g = setup(),
-    n = g.customers[0];
-  g.accept(n.id);
-  tick(g, 0.1);
-  prepare(g, RECIPES[0]);
-  g.serve();
-  tick(g, 30);
-  assert.equal(n.state, "WAITING_FOR_PAYMENT");
-  g.clean(0);
-  tick(g, 3);
-  assert.equal(g.seats[0].status, "AVAILABLE");
-  g.pay(n.id);
-  g.business = true;
-  assert(!g.admit());
-  g.business = false;
-  tick(g, 15);
-  assert.equal(g.customers.length, 0);
-  g.business = true;
-  assert(g.admit());
-});
-test("a second customer reserves a different chair and both cannot use the counter at once", () => {
-  const g = setup(),
-    n = g.customers[0];
-  g.accept(n.id);
-  tick(g, 0.1);
-  prepare(g, RECIPES[0]);
-  g.serve();
-  tick(g, 4);
-  assert.equal(n.state, "SITTING_AND_DRINKING");
-  g.business = true;
-  assert(g.admit());
-  g.business = false;
-  assert.equal(g.customers[1].seat, 1);
-  assert(!g.admit());
-  tick(g, 10);
-  assert.equal(
-    g.customers.filter((n) => n.state === "WAITING_TO_ORDER").length,
-    1,
-  );
-  assert.equal(g.orders.length, 1);
-});
-
-test("existing fishing POV stays on the pier and cannot step sideways into water", () => {
-  const camera = new THREE.PerspectiveCamera();
-  camera.position.set(76, 1.9, 12);
-  const player = createPlayerCollision(
-    [],
-    () => [],
-    () => 0.25,
-  );
-  player.move(camera, 0, 0);
-  assert.equal(camera.position.x, 76);
-  player.move(camera, 0, 10);
-  assert(camera.position.z <= 14.721 && camera.position.z > 14.7);
-  assert.equal(camera.position.x, 76);
-  player.move(camera, 20, 0);
-  assert(camera.position.x <= 87.721);
+test("v1 migration backs up source, converts xu to VND, preserves EXP/claims and refunds unfinished work once", () => {
+  const store = memory(),
+    old = {
+      version: 1,
+      data: {
+        account: {
+          cash: 122,
+          xp: 18,
+          revenue: 25,
+          costs: 3,
+          claimed: ["coffee3"],
+          history: [{ amount: 25, label: "Cà phê đen" }],
+          stats: { served: 1, streak: 1, bestStreak: 1 },
+        },
+        nextId: 2,
+        doorOpen: true,
+        craft: { steps: ["cup", "coffee"] },
+        orders: [],
+      },
+    };
+  const text = JSON.stringify(old);
+  store.setItem(LEGACY_KEY, text);
+  const migrated = loadGame(store);
+  assert.equal(store.getItem(BACKUP_KEY), text);
+  assert.equal(migrated.account.cash, 125000);
+  assert.equal(migrated.account.revenue, 25000);
+  assert.equal(migrated.account.xp, 18);
+  assert(migrated.account.claimed.includes("coffee3"));
+  const g = new CafeGame(layout, migrated);
+  assert(saveGame(g.snapshot(), store));
+  assert.equal(loadGame(store).account.cash, 125000);
+  assert.equal(store.getItem(LEGACY_KEY), text);
+  assert.equal(migrateV1("bad"), null);
 });

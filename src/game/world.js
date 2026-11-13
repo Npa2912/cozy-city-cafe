@@ -1,10 +1,21 @@
 import * as THREE from "three";
-import { group, box, cylinder, sphere, rod, label, mat } from "../street.js";
+import {
+  group,
+  box,
+  cylinder,
+  sphere,
+  rod,
+  label,
+  mat,
+  torus,
+} from "../street.js";
 import { table, chair, cup } from "../refinement.js";
 import { buildDrink } from "./drink-model.js";
 import { person, batchRigidParts } from "../life.js";
 import { URBAN_PLAN } from "../urban-plan.js";
-import { CONFIG, RECIPES } from "./data.js";
+import { tutorialStep } from "./crafting.js";
+import { currentOrder, recipeFor } from "./orders.js";
+import { CONFIG, RECIPES, money } from "./data.js";
 export function cafeWorld(scene, cafe, camera) {
   cafe.updateMatrixWorld(true);
   const point = (x, z, y = 0.34) => {
@@ -15,8 +26,7 @@ export function cafeWorld(scene, cafe, camera) {
     cafe.worldToLocal(new THREE.Vector3(p.x, p.y || 0, p.z));
   const seats = [];
   const obstacles = [];
-  const dirtyMarkers = [];
-  const cloths = [];
+
   for (const [i, [x, z]] of [
     [3.1, -3.4],
     [5.1, -1.4],
@@ -45,56 +55,90 @@ export function cafeWorld(scene, cafe, camera) {
       maxZ: b.max.z,
       owner: `chair${i}`,
     });
-    const dirty = group(cafe, x, 0.34, z);
-    dirty.userData.dynamic = true;
-    cylinder(dirty, 0, 0.9, 0, 0.22, 0.22, 0.035, "#ccb58d");
-    cup(dirty, 0, 0.92, 0, "#d8be98");
-    for (let k = 0; k < 5; k++)
-      sphere(
-        dirty,
-        Math.cos(k) * 0.35,
-        0.89,
-        Math.sin(k) * 0.3,
-        0.035,
-        0.018,
-        0.025,
-        "#7c6049",
-      );
-    dirty.visible = false;
-    dirtyMarkers.push(dirty);
-    const cloth = box(cafe, x, 1.25, z, 0.35, 0.03, 0.25, "#b3d0be", 0.04);
-    cloth.userData.dynamic = true;
-    cloth.visible = false;
-    cloths.push(cloth);
     seats.push({ center, approach, chair: seat });
   }
   const stations = [
     ["door", "Cửa kính", -0.3, 1.04],
     ["counter", "Order / két tiền", -0.9, -3.15],
-    ["ingredients", "Khu lấy ly", -5.15, -3.2],
+    ["ingredients", "Lấy ly", -5.3, -3.2],
+    ["milk", "Phần sữa", -5.0, -3.2],
+    ["teaBase", "Trà sữa pha sẵn", -2.9, -3.2],
+    ["pearls", "Trân châu", -2.05, -3.2],
     ["coffee", "Máy cà phê", -3.7, -3.2],
     ["tea", "Máy lắc trà sữa", -2.4, -3.2],
     ["delivery", "Khay giao đồ", -0.7, -3.2],
   ].map(([id, name, x, z]) => ({ id, name, position: point(x, z, 1.3) }));
+  const staffSigns = group(cafe, 0, 0, -5.6, Math.PI);
   for (const [name, x] of [
-    ["NGUYÊN LIỆU", -5.1],
-    ["COFFEE", -3.7],
-    ["MILK TEA", -2.6],
-    ["POS", -1.7],
-    ["GIAO ĐỒ", -0.75],
+    ["LY / SỮA", 5.1],
+    ["CÀ PHÊ", 3.7],
+    ["TRÀ SỮA", 2.7],
+    ["ORDER / KÉT", 0.9],
   ])
     label(
-      cafe,
+      staffSigns,
       name,
       x,
-      0.83,
-      -2.23,
-      0.8,
+      0.85,
+      -2.15,
+      0.9,
       0.18,
       "#fff0c9",
       "#527d69",
       "bold 60px sans-serif",
     );
+  const entry = label(
+    cafe,
+    "LỐI NHÂN VIÊN →",
+    0.5,
+    0.37,
+    -2.3,
+    1.6,
+    0.28,
+    "#f5e6bb",
+    "#527d69",
+  );
+  entry.rotation.x = -Math.PI / 2;
+  // Just a small stock of usable cups and two ingredient containers.
+  for (let i = 0; i < 2; i++)
+    cup(cafe, -5.3 + i * 0.16, 1.23, -3.08, "#eee1bf", false);
+  cylinder(cafe, -5.0, 1.4, -3.18, 0.08, 0.08, 0.35, "#e6dec6");
+  cylinder(
+    cafe,
+    -2.05,
+    1.4,
+    -3.18,
+    0.075,
+    0.075,
+    0.34,
+    mat("#d6c29d", { transparent: true, opacity: 0.6 }),
+  );
+  const marker = group(scene);
+  marker.userData.dynamic = true;
+  marker.name = "guided-station-highlight";
+  const ring = torus(
+    marker,
+    0,
+    0,
+    0,
+    0.29,
+    0.027,
+    new THREE.MeshBasicMaterial({
+      color: "#f4c95f",
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    }),
+  );
+  ring.rotation.x = Math.PI / 2;
+  const arrow = new THREE.Mesh(
+    new THREE.ConeGeometry(0.11, 0.24, 16),
+    new THREE.MeshBasicMaterial({ color: "#ffe39a" }),
+  );
+  arrow.rotation.z = Math.PI;
+  arrow.position.y = 0.55;
+  marker.add(arrow);
+  marker.visible = false;
   // Support the moved pastry display on a rear shelf.
   box(cafe, 3.4, 2.96, -4.57, 1.05, 0.12, 0.65, "#886b48", 0.04);
   for (const x of [3.1, 3.7])
@@ -187,8 +231,11 @@ export function cafeWorld(scene, cafe, camera) {
     const drink = group(a.limbs[0], 0, -0.4, 0.05);
     buildDrink(drink, n.recipe);
     drink.visible = false;
+    const cash = group(a.limbs[2], 0, -0.38, 0.06);
+    box(cash, 0, 0, 0, 0.24, 0.12, 0.012, "#9ebd9d", 0.015);
+    cash.visible = false;
     batchRigidParts(a.g);
-    return { ...a, bent, drink };
+    return { ...a, bent, drink, cash };
   }
   return {
     point,
@@ -206,6 +253,7 @@ export function cafeWorld(scene, cafe, camera) {
       spawn: point(-2.8, 2.0),
       entrance: point(-0.3, 1.85),
       counter: point(-1.8, -1.25),
+      queue: [point(-1.8, -1.25), point(-3.2, -1.25), point(-4.6, -1.25)],
       handoff: point(-0.75, -1.65),
       exit: point(-2.8, 2.0),
     },
@@ -248,9 +296,36 @@ export function cafeWorld(scene, cafe, camera) {
         dt,
       );
       door.rotation.y = doorAngle;
+      const step = tutorialStep(model),
+        focus = step?.station || (!model.doorOpen ? "door" : "counter"),
+        target = stations.find((s) => s.id === focus);
+      marker.visible = playingGame && !!target;
+      if (target) {
+        marker.position.set(
+          target.position.x,
+          target.position.y + 0.12,
+          target.position.z,
+        );
+        const pulse = model.settings.staticHighlight
+          ? 1
+          : 0.88 + Math.sin(model.clock * 2.5) * 0.12;
+        ring.scale.setScalar(pulse);
+        arrow.position.y =
+          0.55 +
+          (model.settings.staticHighlight
+            ? 0
+            : Math.sin(model.clock * 2.5) * 0.07);
+      }
+      if (cafe.userData.cashDrawer)
+        cafe.userData.cashDrawer.position.z = THREE.MathUtils.damp(
+          cafe.userData.cashDrawer.position.z,
+          model.register ? -2.68 : -2.3,
+          8,
+          dt,
+        );
       held.visible = playingGame && !!model.craft && !model.job;
       const steps = model.craft?.steps || [],
-        isTea = steps.includes("tea");
+        isTea = steps.includes("teaBase");
       heldTea.g.visible = isTea;
       heldCoffee.g.visible = !isTea;
       heldTea.pearls.visible = steps.includes("pearls");
@@ -265,7 +340,16 @@ export function cafeWorld(scene, cafe, camera) {
         );
       }
       const pending = model.customers.find(
-          (n) => n.state === "WALKING_TO_TABLE" && !n.pickedUp,
+          (n) =>
+            ["WAITING_FOR_DRINK", "WAITING_FOR_PAYMENT", "PICKING_UP"].includes(
+              n.state,
+            ) &&
+            model.orders.some(
+              (o) =>
+                o.customer === n.id &&
+                ["READY", "WAITING_PAYMENT", "PAID"].includes(o.status),
+            ) &&
+            !n.pickedUp,
         ),
         teaOrder = pending?.recipe.includes("Tea");
       handoffTea.g.visible = !!teaOrder;
@@ -289,7 +373,7 @@ export function cafeWorld(scene, cafe, camera) {
           c.fillText(r ? r.name : "Sẵn sàng nhận đơn", 24, 120);
           c.fillText(n ? n.name + " · #" + n.id : "Quầy thanh toán", 24, 164);
           c.font = "bold 32px sans-serif";
-          c.fillText(r ? `${r.price} XU` : "0 XU", 24, 215);
+          c.fillText(r ? money(r.price) : "0đ", 24, 215);
           c.font = "22px sans-serif";
           c.fillText(
             n?.state === "WAITING_FOR_PAYMENT"
@@ -302,7 +386,16 @@ export function cafeWorld(scene, cafe, camera) {
         }
       }
       handoff.visible = model.customers.some(
-        (n) => n.state === "WALKING_TO_TABLE" && !n.pickedUp,
+        (n) =>
+          ["WAITING_FOR_DRINK", "WAITING_FOR_PAYMENT", "PICKING_UP"].includes(
+            n.state,
+          ) &&
+          model.orders.some(
+            (o) =>
+              o.customer === n.id &&
+              ["READY", "WAITING_PAYMENT", "PAID"].includes(o.status),
+          ) &&
+          !n.pickedUp,
       );
       workingCup.visible = model.job?.action === "coffee";
       stream.visible = workingCup.visible;
@@ -317,14 +410,6 @@ export function cafeWorld(scene, cafe, camera) {
         p.visible = model.job?.action === "coffee";
         p.position.y = 0.3 + ((model.clock * 0.8 + i * 0.2) % 1) * 0.5;
         p.scale.setScalar(0.8 + ((model.clock + i * 0.2) % 1) * 0.6);
-      });
-      dirtyMarkers.forEach(
-        (g, i) => (g.visible = model.seats[i].status === "NEEDS_CLEANING"),
-      );
-      cloths.forEach((g, i) => {
-        g.visible = model.cleaning?.id === i;
-        if (g.visible)
-          g.position.x = (i ? 5.1 : 3.1) + Math.sin(model.clock * 9) * 0.35;
       });
       for (const n of model.customers) {
         if (!actorMap.has(n.id)) actorMap.set(n.id, createActor(n));
@@ -354,18 +439,24 @@ export function cafeWorld(scene, cafe, camera) {
           );
         a.bent.visible = seated > 0.5;
         for (const i of [1, 3]) a.limbs[i].visible = seated <= 0.5;
+        a.cash.visible = n.state === "WAITING_FOR_PAYMENT";
+        if (a.cash.visible) a.limbs[2].rotation.x = -1.2;
         const moving = n.moving;
         for (let i = 0; i < 4; i++)
           a.limbs[i].rotation.x = moving
             ? Math.sin(model.clock * 7 + n.id) * 0.35 * [1, -1, -1, 1][i]
             : 0;
+        if (a.cash.visible) a.limbs[2].rotation.x = -1.2;
         if (n.rejectedAt !== undefined && model.clock - n.rejectedAt < 1.5) {
           a.g.rotation.y = -Math.PI / 2 + Math.sin(model.clock * 15) * 0.15;
           a.limbs[0].rotation.x = -0.5;
         }
         a.drink.visible =
           n.state === "SITTING_AND_DRINKING" ||
-          (n.state === "WALKING_TO_TABLE" && n.pickedUp);
+          (n.pickedUp &&
+            ["PICKING_UP", "WALKING_TO_TABLE", "LEAVING_SHOP"].includes(
+              n.state,
+            ));
         if (a.drink.visible)
           a.limbs[0].rotation.x =
             -0.9 -

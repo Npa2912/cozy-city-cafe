@@ -175,3 +175,222 @@
     columns: 1;
   }
 }
+/* Guided service HUD and VND cash drawer */
+.game-hud {
+  max-width: 440px;
+  padding: 10px 14px;
+}
+.hud-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hud-title strong {
+  color: #446d57;
+}
+.hud-counts {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.game-hud small {
+  font-size: 10px;
+}
+.game-notice {
+  top: auto;
+  bottom: 125px;
+  right: 18px;
+  max-width: 280px;
+  font-size: 12px;
+}
+.brew-guide {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 270px;
+  background: #fff8e9f5;
+  padding: 16px 18px;
+  border: 1px solid #fff;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px #2343;
+}
+.brew-guide:empty {
+  display: none;
+}
+.guide-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: #6a8066;
+}
+.brew-guide h3 {
+  margin: 6px 0 12px;
+  font:
+    600 20px Georgia,
+    serif;
+}
+.guide-step {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.guide-step > span {
+  font-size: 28px;
+  color: #ae8e41;
+}
+.brew-guide progress {
+  width: 100%;
+  height: 7px;
+  margin-top: 14px;
+  accent-color: #b8a05a;
+}
+.brew-guide p {
+  font-size: 11px;
+  margin-bottom: 0;
+}
+.order-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.status-pill {
+  font-size: 10px;
+  background: #e5eddd;
+  border-radius: 20px;
+  padding: 3px 8px;
+}
+.order-card.is-head {
+  border-left: 3px solid #c9ac6b;
+  padding-left: 12px;
+}
+.order-card h3 {
+  font:
+    600 20px Georgia,
+    serif;
+  margin: 7px 0;
+}
+.order-card p,
+.panel-help {
+  font-size: 12px;
+}
+.cash-summary {
+  background: #f0e6d2;
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+.cash-summary p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cash-drawer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.game-modal button.banknote {
+  margin: 0;
+  background: #b8cfb9;
+  color: #34483c;
+  border: 1px solid #7fa78a;
+  min-height: 77px;
+  text-align: left;
+  padding: 10px 12px;
+  box-shadow: inset 0 0 0 4px #fff3;
+}
+.banknote span,
+.banknote small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  float: none;
+}
+.banknote b {
+  display: block;
+  font-size: 19px;
+  margin: 2px 0;
+}
+.game-modal button.note-1 {
+  background: #d3bf9d;
+}
+.game-modal button.note-2 {
+  background: #c3b7d6;
+}
+.game-modal button.note-3 {
+  background: #d3c2a7;
+}
+.game-modal button.note-4 {
+  background: #a8c4da;
+}
+.game-modal button.note-5 {
+  background: #c8b9cd;
+}
+.game-modal button.note-6 {
+  background: #a7cab0;
+}
+.selected-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 14px;
+  font-size: 11px;
+}
+.selected-notes span {
+  background: #e9e4d3;
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.change-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+}
+.cash-hint {
+  font-size: 12px;
+  background: #eef0df;
+  padding: 10px;
+  border-radius: 8px;
+}
+.game-modal article {
+  width: min(470px, 100%);
+}
+@media (max-width: 700px) {
+  .game-hud {
+    max-width: calc(100% - 16px);
+    padding: 9px 11px;
+  }
+  .game-hud button {
+    font-size: 10px;
+    padding: 5px;
+  }
+  .brew-guide {
+    top: 153px;
+    right: 8px;
+    width: 210px;
+    padding: 12px;
+    font-size: 11px;
+  }
+  .brew-guide h3 {
+    font-size: 16px;
+  }
+  .game-notice {
+    bottom: 155px;
+    top: auto;
+    right: 8px;
+    font-size: 10px;
+  }
+  .game-modal {
+    padding-top: 150px;
+  }
+  .cash-drawer {
+    gap: 6px;
+  }
+  .banknote b {
+    font-size: 16px;
+  }
+  .game-modal article {
+    padding: 12px 15px;
+  }
+  .game-modal h2 {
+    font-size: 20px;
+  }
+}

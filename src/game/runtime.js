@@ -3,7 +3,9 @@ import { CafeGame } from "./model.js";
 import { cafeWorld } from "./world.js";
 import { collectObstacles, createPlayerCollision } from "./world-collision.js";
 import { findPath, slide } from "./collision.js";
-import { CONFIG, RECIPES } from "./data.js";
+import { CONFIG } from "./data.js";
+import { tutorialStep } from "./crafting.js";
+import { currentOrder } from "./orders.js";
 import { loadGame, saveGame } from "./save.js";
 import { gameUI } from "./ui.js";
 import { sound } from "./audio.js";
@@ -16,35 +18,43 @@ export function createCafeGame({
   canvas,
   onDirty,
 }) {
-  const world = cafeWorld(scene, cafe, camera),
-    model = new CafeGame(world.layout, loadGame());
+  const saved = loadGame(),
+    world = cafeWorld(scene, cafe, camera),
+    model = new CafeGame(world.layout, saved);
+  if (!saved)
+    model.settings.staticHighlight = matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
   world.setDoorInstant(model.doorOpen);
-  const obstacles = [...collectObstacles(scene), ...world.obstacles];
+  const obstacles = [...collectObstacles(scene), ...world.obstacles],
+    bounds = world.bounds;
   const navigationObstacles = obstacles.filter((b) =>
     b.kind === "circle"
-      ? b.x + b.radius >= world.bounds.minX &&
-        b.x - b.radius <= world.bounds.maxX &&
-        b.z + b.radius >= world.bounds.minZ &&
-        b.z - b.radius <= world.bounds.maxZ
-      : b.maxX >= world.bounds.minX &&
-        b.minX <= world.bounds.maxX &&
-        b.maxZ >= world.bounds.minZ &&
-        b.minZ <= world.bounds.maxZ,
+      ? b.x + b.radius >= bounds.minX &&
+        b.x - b.radius <= bounds.maxX &&
+        b.z + b.radius >= bounds.minZ &&
+        b.z - b.radius <= bounds.maxZ
+      : b.maxX >= bounds.minX &&
+        b.minX <= bounds.maxX &&
+        b.maxZ >= bounds.minZ &&
+        b.minZ <= bounds.maxZ,
   );
   let active = false,
-    saveClock = 0,
-    nearest = null;
-  const paths = new Map();
-  const dynamic = () => [
-    world.doorShape(),
-    ...model.customers.map((n) => ({
-      kind: "circle",
-      x: n.pos.x,
-      z: n.pos.z,
-      radius: 0.25,
-    })),
-  ];
-  const collision = createPlayerCollision(obstacles, dynamic, world.floorAt);
+    nearest = null,
+    saveClock = 0;
+  const paths = new Map(),
+    reachCache = new Map();
+  const body = (n) => ({
+    kind: "circle",
+    x: n.pos.x,
+    z: n.pos.z,
+    radius: 0.25,
+  });
+  const collision = createPlayerCollision(
+    obstacles,
+    () => [world.doorShape(), ...model.customers.map(body)],
+    world.floorAt,
+  );
   const near = (id) => {
     const s = world.stations.find((s) => s.id === id);
     return (
@@ -53,21 +63,19 @@ export function createCafeGame({
       Math.hypot(
         camera.position.x - s.position.x,
         camera.position.z - s.position.z,
-      ) < 2.25
+      ) < 2.2
     );
   };
-  function persist() {
+  const persist = () => {
     if (!saveGame(model.snapshot()))
       model.notify(
-        "Trình duyệt không cho lưu dữ liệu. Ca này vẫn chơi được, nhưng có thể mất khi tải lại.",
+        "Trình duyệt chưa cho lưu. Dữ liệu cũ vẫn được giữ; hãy kiểm tra dung lượng lưu trữ.",
       );
-  }
+  };
   function modal(open) {
     pov.unlock();
     orbit.enabled = false;
-    if (!open && active) {
-      pov.lock();
-    }
+    if (!open && active) pov.lock();
     onDirty();
   }
   const ui = gameUI(
@@ -76,23 +84,41 @@ export function createCafeGame({
       if (action === "business") {
         model.toggleBusiness();
         if (model.business) model.spawnClock = CONFIG.spawnSeconds;
-      } else if (action === "accept" && near("counter")) {
-        if (model.accept(Number(id))) sound("beep");
-      } else if (action === "pay" && near("counter")) {
-        if (model.pay(Number(id))) sound("pay");
-      } else if (action === "craft") {
-        const station =
-          id === "coffee" ? "coffee" : id === "shake" ? "tea" : "ingredients";
-        if (!near(station)) model.notify("Hãy đến đúng khu vực để thao tác.");
-        else if (model.action(id)) {
-          sound(id === "coffee" || id === "shake" ? "machine" : "beep");
+      } else if (action === "start" && near("counter")) {
+        if (model.startOrder(Number(id))) {
+          sound("beep");
+          ui.close();
         }
-      } else if (action === "discard" && near("ingredients")) model.discard();
-      else if (action === "claim") {
+      } else if (action === "cancel" && near("counter"))
+        model.cancel(Number(id));
+      else if (action === "cash" && near("counter")) {
+        if (model.openCash(Number(id))) {
+          model.cashHint = false;
+          ui.open("cash", "counter");
+        }
+      } else if (action === "note" && near("counter"))
+        model.addNote(Number(id));
+      else if (action === "undo" && near("counter")) model.undoNote();
+      else if (action === "reset" && near("counter")) model.resetNotes();
+      else if (action === "hint" && near("counter")) {
+        model.cashHint = true;
+        model.touch();
+      } else if (action === "confirm" && near("counter")) {
+        if (model.pay(Number(id))) {
+          sound("pay");
+          ui.close();
+        }
+      } else if (action === "claim") {
         if (model.claim(id)) sound("pay");
+      } else if (action === "static") {
+        model.settings.staticHighlight = !model.settings.staticHighlight;
+        model.touch();
+      } else if (action === "easy") {
+        model.settings.easyChange = !model.settings.easyChange;
+        model.touch();
       } else if (action === "save") {
         persist();
-        model.notify("Đã lưu ca hiện tại trên trình duyệt.");
+        model.notify("Đã lưu tiến trình và thiết lập.");
       }
       persist();
       ui.render();
@@ -119,52 +145,47 @@ export function createCafeGame({
     orbit.enabled = true;
     persist();
   }
-  const startButton = document.createElement("button");
-  startButton.id = "game-start";
-  startButton.textContent = "Chơi quán · E tương tác";
-  startButton.addEventListener("click", start);
-  document.querySelector("nav").prepend(startButton);
+  const button = document.createElement("button");
+  button.id = "game-start";
+  button.textContent = "Chơi quán";
+  button.addEventListener("click", start);
+  document.querySelector("nav").prepend(button);
   canvas.addEventListener("click", () => {
-    if (active && !ui.panel && !pov.isLocked) pov.lock();
+    if (!active) return;
+    if (!ui.panel && !pov.isLocked) pov.lock();
+    else if (pov.isLocked && nearest?.id === "counter") interact();
   });
   function interact() {
     if (!nearest) return;
-    if (nearest.id !== "door" && !world.isStaff(camera.position)) {
-      model.notify("Đi vòng bên phải quầy vào lối nhân viên để dùng thiết bị.");
-      return;
-    }
     if (nearest.id === "door") {
-      // Refuse either sweep if someone occupies the inner portal; the player can
-      // operate the handle safely from both sides of the door.
       if (!world.isDoorClear(camera.position, model.customers, !model.doorOpen))
-        model.notify(
-          "Có người trong vùng cửa. Lùi khỏi ngưỡng cửa trước khi mở/đóng.",
-        );
+        model.notify("Có người trong vùng cửa, hãy lùi khỏi ngưỡng cửa.");
       else {
         model.doorOpen = !model.doorOpen;
         paths.clear();
-        model.message = `Cửa ${model.doorOpen ? "OPEN" : "CLOSED"} · Trạng thái kinh doanh được điều khiển riêng.`;
+        reachCache.clear();
         model.touch();
         sound("beep");
       }
-    } else if (nearest.id.startsWith("clean")) {
-      model.clean(Number(nearest.id.slice(5)));
-    } else if (nearest.id === "delivery") {
-      if (model.serve()) sound("beep");
-    } else if (nearest.id === "counter") {
-      ui.open(
-        model.customers.some((n) => n.state === "WAITING_FOR_PAYMENT")
-          ? "pos"
-          : "counter",
-        "counter",
-      );
-    } else ui.open(nearest.id, nearest.id);
+    } else if (!world.isStaff(camera.position))
+      model.notify("Đi vòng bên phải quầy vào lối nhân viên để thao tác.");
+    else if (nearest.id === "counter") {
+      const o = model.orders.find((o) => o.status === "WAITING_PAYMENT");
+      if (o && model.openCash(o.customer)) {
+        model.cashHint = false;
+        ui.open("cash", "counter");
+      } else ui.open("orders", "counter");
+    } else {
+      const hadJob = !!model.job;
+      if (model.interact(nearest.id))
+        sound(!hadJob && model.job ? "machine" : "beep");
+    }
     persist();
     onDirty();
   }
   window.addEventListener("keydown", (e) => {
-    if (!active || e.repeat) return;
-    if (e.target.matches("input,select,textarea")) return;
+    if (!active || e.repeat || e.target.matches("input,textarea,select"))
+      return;
     if (e.code === "Escape") {
       if (ui.panel) {
         e.preventDefault();
@@ -172,42 +193,89 @@ export function createCafeGame({
       }
       return;
     }
-    if (e.code === "KeyH" || e.code === "KeyJ") {
-      e.preventDefault();
-      const panel = e.code === "KeyH" ? "recipes" : "quests";
-      if (ui.panel === panel) ui.close();
-      else ui.open(panel);
-    }
     if (e.code === "KeyE" && !ui.panel) {
       e.preventDefault();
       interact();
     }
+    if (e.code === "KeyJ") {
+      e.preventDefault();
+      ui.panel === "quests" ? ui.close() : ui.open("quests");
+    }
+    if (e.code === "KeyH") {
+      e.preventDefault();
+      model.notify(
+        "Không cần nhớ công thức: chỉ theo vật thể phát sáng và nhấn E.",
+      );
+    }
     if (e.code === "KeyO") {
       model.toggleBusiness();
       if (model.business) model.spawnClock = CONFIG.spawnSeconds;
-      persist();
       ui.render();
+      persist();
     }
-    if (e.code === "KeyB")
-      model.notify(
-        "Edit Mode thuộc Mốc 3, chưa được triển khai trong bản chơi này.",
-      );
   });
   window.addEventListener("pagehide", persist);
+  function canReach(from, to) {
+    const key = `${to.x}/${to.z}/${model.doorOpen}`;
+    let c = reachCache.get(key);
+    if (!c || c.until < model.clock) {
+      c = {
+        until: model.clock + 2,
+        ok: !!findPath(
+          from,
+          to,
+          [...navigationObstacles, world.doorShape()],
+          bounds,
+          0.23,
+        ),
+      };
+      reachCache.set(key, c);
+    }
+    return c.ok;
+  }
   function move(n, target, dt) {
     n.moving = false;
-    const dist = Math.hypot(target.x - n.pos.x, target.z - n.pos.z);
-    if (dist < 0.075) return true;
+    if (Math.hypot(target.x - n.pos.x, target.z - n.pos.z) < 0.075) return true;
     let route = paths.get(n.id);
     const signature = `${n.state}/${target.x}/${target.z}/${model.doorOpen}`;
+    const doorShape = world.doorShape();
     if (!route || route.signature !== signature || route.retry <= model.clock) {
-      const shapes = [...navigationObstacles, world.doorShape()];
-      const path = findPath(n.pos, target, shapes, world.bounds, 0.23);
+      const idle = model.customers
+        .filter(
+          (o) =>
+            o !== n &&
+            [
+              "WAITING_TO_ORDER",
+              "WAITING_FOR_DRINK",
+              "WAITING_FOR_PAYMENT",
+            ].includes(o.state) &&
+            o.queueReady,
+        )
+        .map(body);
+      const path = findPath(
+        n.pos,
+        target,
+        [...navigationObstacles, doorShape, ...idle],
+        bounds,
+        0.23,
+      );
       route = { signature, path, retry: model.clock + (path ? 3 : 1) };
       paths.set(n.id, route);
     }
     if (!route.path?.length) return false;
     let budget = CONFIG.walkSpeed * dt;
+    const ob = [
+      ...navigationObstacles,
+      doorShape,
+      ...model.customers.filter((o) => o !== n).map(body),
+    ];
+    if (active && pov.isLocked)
+      ob.push({
+        kind: "circle",
+        x: camera.position.x,
+        z: camera.position.z,
+        radius: 0.28,
+      });
     while (budget > 0 && route.path.length) {
       const p = route.path[0],
         dx = p.x - n.pos.x,
@@ -217,47 +285,29 @@ export function createCafeGame({
         route.path.shift();
         continue;
       }
-      const step = Math.min(0.06, budget, l),
-        ob = [
-          ...navigationObstacles,
-          world.doorShape(),
-          ...model.customers
-            .filter((o) => o !== n)
-            .map((o) => ({
-              kind: "circle",
-              x: o.pos.x,
-              z: o.pos.z,
-              radius: 0.25,
-            })),
-        ];
-      if (active && pov.isLocked)
-        ob.push({
-          kind: "circle",
-          x: camera.position.x,
-          z: camera.position.z,
-          radius: 0.28,
-        });
-      const next = slide(n.pos, (dx / l) * step, (dz / l) * step, 0.23, ob);
-      const moved = Math.hypot(next.x - n.pos.x, next.z - n.pos.z);
-      if (moved < step * 0.3) {
-        route.retry = Math.min(route.retry, model.clock + 0.5);
+      const distance = Math.min(0.06, budget, l),
+        next = slide(n.pos, (dx / l) * distance, (dz / l) * distance, 0.23, ob);
+      if (Math.hypot(next.x - n.pos.x, next.z - n.pos.z) < distance * 0.3) {
+        route.retry = Math.min(route.retry, model.clock + 0.4);
         break;
       }
       n.pos = next;
       n.heading = Math.atan2(dx, dz);
       n.moving = true;
-      budget -= step;
+      budget -= distance;
     }
     return Math.hypot(target.x - n.pos.x, target.z - n.pos.z) < 0.08;
   }
   return {
     model,
-    obstacles,
     world,
+    obstacles,
     collision,
     ui,
     start,
     stop,
+    persist,
+    canReach,
     get active() {
       return active;
     },
@@ -265,19 +315,9 @@ export function createCafeGame({
       return !!ui.panel;
     },
     update(dt) {
-      if (active && dt > 0) onDirty();
       if (active) {
-        if (
-          model.cleaning &&
-          Math.hypot(
-            camera.position.x - model.seats[model.cleaning.id].center.x,
-            camera.position.z - model.seats[model.cleaning.id].center.z,
-          ) > 2.4
-        ) {
-          model.cleaning = null;
-          model.notify("Đã dừng dọn bàn vì bạn đi quá xa.");
-        }
-        model.update(Math.min(dt, 1), move);
+        if (dt > 0) onDirty();
+        model.update(Math.min(dt, 1), move, canReach);
         saveClock += dt;
         if (saveClock > 2) {
           saveClock = 0;
@@ -286,30 +326,24 @@ export function createCafeGame({
       }
       world.update(model, Math.min(dt, 0.1), active);
       if (active) {
-        const direction = camera.getWorldDirection(new THREE.Vector3());
         let best = Infinity;
         nearest = null;
-        const candidates = [
-          ...world.stations,
-          ...model.seats
-            .filter((s) => s.status === "NEEDS_CLEANING")
-            .map((s) => ({
-              id: `clean${s.id}`,
-              name: "Dọn bàn",
-              position: s.center,
-            })),
-        ];
-        for (const s of candidates) {
+        const direction = camera.getWorldDirection(new THREE.Vector3());
+        direction.y = 0;
+        direction.normalize();
+        const expected = tutorialStep(model)?.station;
+        for (const s of world.stations) {
           const delta = new THREE.Vector3(
               s.position.x - camera.position.x,
               0,
               s.position.z - camera.position.z,
             ),
-            distance = delta.length();
-          const dot = delta
-            .normalize()
-            .dot(new THREE.Vector3(direction.x, 0, direction.z).normalize());
-          const score = distance + (1 - dot) * 5;
+            distance = delta.length(),
+            dot = delta.normalize().dot(direction),
+            score =
+              distance +
+              (1 - dot) * 5 -
+              (s.id === expected && dot > 0.7 ? 1 : 0);
           if (distance < 2.2 && dot > -0.2 && score < best) {
             best = score;
             nearest = s;
@@ -321,14 +355,13 @@ export function createCafeGame({
             : pov.isLocked
               ? nearest
                 ? `E · ${nearest.name}`
-                : "H · Công thức   J · Nhiệm vụ"
-              : "Nhấp cảnh để tiếp tục nhìn / WASD",
+                : "Theo dấu chỉ dẫn · J nhiệm vụ"
+              : "Nhấp cảnh để nhìn / WASD",
         );
       }
     },
     movePlayer(dx, dz) {
       collision.move(camera, dx, dz);
     },
-    persist,
   };
 }

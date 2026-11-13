@@ -1,52 +1,69 @@
 import { RECIPES } from "./data.js";
-import { validateRecipe } from "./recipe-validator.js";
-export function acceptOrder(model, id) {
-  const n = model.customers.find((n) => n.id === id);
-  if (
-    !n ||
-    n.state !== "WAITING_TO_ORDER" ||
-    model.orders.some((o) => o.customer === id)
-  )
-    return false;
+import { isHead, releaseQueue } from "./queue.js";
+import { releaseSeat } from "./seating.js";
+export function createOrder(model, n) {
+  if (model.orders.some((o) => o.customer === n.id)) return false;
   model.orders.push({
-    customer: id,
+    customer: n.id,
     recipe: n.recipe,
     status: "WAITING",
     paid: false,
+    createdAt: model.clock,
+    step: 0,
+    completedSteps: [],
   });
-  model.transition(n, "ORDER_PLACED");
-  model.message = "Đã nhận đơn. H để xem công thức.";
+  model.touch();
   return true;
 }
-export function serveDrink(model) {
-  const n = model.customers.find((n) => n.state === "WAITING_FOR_DRINK");
-  if (!n || !model.craft?.ready)
-    return model.notify("Cần một ly hoàn thành và khách đang chờ đồ.");
-  const r = RECIPES.find((r) => r.id === n.recipe),
-    check = validateRecipe(r, model.craft.steps);
-  model.craft = null;
-  if (!check.ok) {
-    n.rejectedAt = model.clock;
-    model.account.stats.errors++;
-    model.account.stats.streak = 0;
-    n.satisfaction = Math.max(0, n.satisfaction - 15);
-    model.notify(
-      `Khách từ chối: ${check.reason} Chi phí nguyên liệu đã được trừ; hãy pha lại.`,
+export function startOrder(model, id) {
+  const o = model.orders.find((o) => o.customer === id),
+    n = model.customers.find((n) => n.id === id);
+  if (
+    !o ||
+    o.status !== "WAITING" ||
+    !n ||
+    !isHead(model, id) ||
+    !n.queueReady ||
+    model.activeOrder !== null
+  )
+    return model.notify(
+      "Chọn khách đầu hàng đã tới quầy; mỗi lần chỉ pha một đơn.",
     );
-    return false;
-  }
-  model.orders.find((o) => o.customer === n.id).status = "SERVED";
-  model.account.xp += 6;
-  model.account.stats.served++;
-  if (r.id === "black" || r.id === "milkCoffee") model.account.stats.coffee++;
-  model.account.stats.streak++;
-  model.account.stats.bestStreak = Math.max(
-    model.account.stats.bestStreak,
-    model.account.stats.streak,
-  );
-  n.pickedUp = false;
-  model.transition(n, "WALKING_TO_TABLE");
-  model.message =
-    "Khách nhận ly và đến bàn. Doanh thu chỉ cộng sau thanh toán.";
+  model.activeOrder = id;
+  o.status = "PREPARING";
+  model.transition(n, "WAITING_FOR_DRINK");
+  model.message = "Làm theo vật thể phát sáng. Nhấn E một lần ở mỗi bước.";
+  model.touch();
   return true;
+}
+export function cancelOrder(model, id) {
+  const o = model.orders.find((o) => o.customer === id),
+    n = model.customers.find((n) => n.id === id);
+  if (
+    !o ||
+    !n ||
+    !["WAITING", "PREPARING", "READY", "WAITING_PAYMENT"].includes(o.status) ||
+    o.paid
+  )
+    return false;
+  o.status = "CANCELLED";
+  if (model.activeOrder === id) {
+    model.activeOrder = null;
+    model.craft = null;
+    model.job = null;
+  }
+  if (model.register?.orderId === id) model.register = null;
+  releaseQueue(model, id);
+  releaseSeat(model, n);
+  model.account.stats.cancelled++;
+  model.account.stats.streak = 0;
+  model.transition(n, "LEAVING_SHOP");
+  model.touch();
+  return true;
+}
+export function currentOrder(model) {
+  return model.orders.find((o) => o.customer === model.activeOrder) || null;
+}
+export function recipeFor(order) {
+  return RECIPES.find((r) => r.id === order?.recipe);
 }
