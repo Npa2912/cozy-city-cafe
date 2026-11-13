@@ -1,9 +1,17 @@
-# ANTELEO · Cozy City Café
+# ANTELEO · City & Coast Preview
 
 A real, explorable Vite + Three.js café and flower-shop street, refined from the
 three supplied reference views. The existing project and reference landmarks
 are retained: curved cream café, green watering-can roof sculpture, flower
 emblem, purple vending machine, barber pole and pastel skyline.
+
+The approved core is retained and extended by a connected commercial district,
+seaside promenade, fishing pier and a rear café room with a modeled POS station.
+See [the expansion guide](docs/EXPANSION.md) for layout and inspection cameras.
+
+[Expanded city](docs/expanded-city.png) · [Retained core](docs/core-retained.png) · [Seaside](docs/seaside.png) ·
+[Fishing pier](docs/fishing-pier.png) · [Rear room](docs/cafe-annex.png) ·
+[POS](docs/pos-terminal.png)
 
 [Overview](docs/preview-desktop.png) · [Flower-shop view](docs/preview-flowers.png) ·
 [Street view](docs/preview-street.png) · [Café counter](docs/preview-counter.png) ·
@@ -31,9 +39,9 @@ model downloads or external asset requests are required at runtime.
 - **POV WASD:** click the walking button, move with WASD and look with the mouse.
   Escape releases pointer lock. This is a viewing camera, not a collision-based
   player or gameplay system.
-- **Reset to Reference View:** returns to the main overview.
-- **View selector:** overview, view from the florist, street-level view, and a
-  close view of the café preparation counter.
+- **Reset to Reference View:** returns to the expanded reference view.
+- **View selector:** expanded city, the original four core views, rear café room,
+  POS, seaside and fishing pier.
 - **Tạm dừng / Tiếp tục:** pause or resume the moving scene for inspection.
 - **Chụp ảnh:** downloads a PNG of the viewport without interface overlays.
 
@@ -104,10 +112,13 @@ contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test` exercises full van circuits, bounded stops and speed, route continuity,
+`npm test` passes 12 checks covering full van circuits, bounded stops and speed, route continuity,
 pedestrian lane separation and turn easing, and preservation of moving objects
-by static batching. `npm run build` produces the Vercel output. Vite emits a
-non-failing bundle-size advisory (approximately 680 kB minified / 190 kB gzip).
-The production browser check passed for all four views, orbit/reset, POV/WASD,
-Escape, PNG export, moving actors and portrait layout, without JavaScript page
-errors. No Vercel deployment or environment publication was performed.
+by static batching. Expansion checks cover rear-room clearance, POS placement,
+shore connectivity, safe POV starts, retained camera presets and foliage LOD.
+`npm run build` produces the Vercel output. Vite emits a
+non-failing bundle-size advisory (approximately 705 kB minified / 201 kB gzip).
+Production browser checks passed for nine view options, orbit/reset, POV/WASD,
+Escape, PNG export, moving actors and portrait layout, with no JavaScript errors.
+Six expansion/core screenshots were also rendered with no shader errors.
+No Vercel deployment or environment publication was performed.

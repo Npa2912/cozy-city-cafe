@@ -453,7 +453,10 @@ function lantern(parent, x, y, z, scale = 1) {
 }
 function cafeInterior(cafe) {
   const warm = mat("#f3dab0", { emissive: "#b6854e", emissiveIntensity: 0.4 });
-  box(cafe, 0, 2.75, -4.83, 11.8, 4.7, 0.08, warm);
+  // Shared rear wall: only the doorway is opened for the connected annex.
+  box(cafe, -2.55, 2.75, -4.83, 6.7, 4.7, 0.08, warm);
+  box(cafe, 3.95, 2.75, -4.83, 3.9, 4.7, 0.08, warm);
+  box(cafe, 1.4, 4.025, -4.83, 1.2, 2.15, 0.08, warm);
   const equipment = group(cafe, 0, -0.6, 0.7);
   box(equipment, -3.3, 1.75, -3.5, 5.4, 0.13, 1.3, "#e9d5b0", 0.07);
   for (let j = 0; j < 3; j++) {
@@ -647,11 +650,11 @@ function cafeInterior(cafe) {
     "#3f574d",
   );
   for (let i = 0; i < 3; i++) {
-    box(cafe, 2 + i * 1.15, 3.7, -4.65, 0.85, 1.1, 0.07, "#8f6d46");
+    box(cafe, 2.6 + i * 1.15, 3.7, -4.65, 0.85, 1.1, 0.07, "#8f6d46");
     label(
       cafe,
       ["BLOOM", "SLOW DAYS", "COFFEE"][i],
-      2 + i * 1.15,
+      2.6 + i * 1.15,
       3.7,
       -4.59,
       0.72,
@@ -664,7 +667,7 @@ function cafeInterior(cafe) {
   chair(cafe, 2.65, 0.34, -3, Math.PI / 2);
   chair(cafe, 4.35, 0.34, -3, -Math.PI / 2);
   table(cafe, 0.5, 0.34, -3.3, 0.55);
-  chair(cafe, 0.5, 0.34, -4.15, 0);
+  chair(cafe, 0.0, 0.34, -4.15, 0);
   chair(cafe, -0.3, 0.34, -3.2, Math.PI / 2);
   for (const xx of [-4, -1, 2, 4.6]) {
     rod(cafe, [xx, 5.4, -2.1], [xx, 4.38, -2.1], 0.015, "#777054");
@@ -1059,6 +1062,10 @@ export function refineStreet(scene, { cafe }) {
       random() * Math.PI,
     );
   }
+  flushFlowers(scene);
+}
+
+function flushFlowers(scene) {
   scene.updateMatrixWorld(true);
   for (const { geometry, color, items } of flowerBank.values()) {
     const cells = new Map();
@@ -1087,3 +1094,21 @@ export function refineStreet(scene, { cafe }) {
   }
   flowerBank = null;
 }
+
+// A fresh bank keeps additions independent of the approved core's random seed.
+export function withFlowers(scene, build) {
+  seed = 90173;
+  flowerBank = new Map();
+  build();
+  flushFlowers(scene);
+}
+export {
+  flowerBox,
+  bouquetBucket,
+  tree,
+  chair,
+  table,
+  cup,
+  chalkboard,
+  lantern,
+};

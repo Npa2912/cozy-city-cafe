@@ -522,10 +522,24 @@ function ground(scene) {
   pavement.repeat.set(6, 23);
   const pmat = mat("#ffffff", { map: pavement });
   box(scene, -11, 0.08, -29, 21, 0.3, 134, pmat, 0.05);
-  box(scene, 17, 0.08, -29, 17, 0.3, 134, pmat, 0.05);
+  // Branch road exits only beyond the approved core (z=27.5..34.5).
+  // Project the original UVs so paving inside the core does not shift.
+  for (const [z, d] of [
+    [-34.25, 123.5],
+    [36.25, 3.5],
+  ]) {
+    const part = box(scene, 17, 0.08, z, 17, 0.3, d, pmat, 0.05);
+    const uv = part.geometry.attributes.uv,
+      p = part.geometry.attributes.position,
+      n = part.geometry.attributes.normal;
+    for (let i = 0; i < uv.count; i++)
+      if (Math.abs(n.getY(i)) > 0.9)
+        uv.setXY(i, (p.getX(i) + 8.5) / 17, 1 - (p.getZ(i) + z + 96) / 134);
+  }
   for (let z = -90; z < 36; z += 0.65) {
     box(scene, -0.38, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
-    box(scene, 8.7, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
+    if (z < 27.5 || z > 34.5)
+      box(scene, 8.7, 0.06, z, 0.4, 0.35, 0.61, "#dfcdb2", 0.045);
   }
   for (let z = -80; z < 16; z += 7)
     box(scene, 4, 0.005, z, 0.15, 0.015, 2.8, "#eee0b8", 0.01);
@@ -641,7 +655,9 @@ function wateringCan(scene) {
 function shop(scene) {
   const g = group(scene, -3.8, 0, -5, Math.PI / 2);
   g.scale.set(1.5, 1.15, 1);
-  box(g, 0, 3, -5.1, 13, 5.8, 0.4, palette.cream, 0.18);
+  box(g, -2.85, 3, -5.1, 7.3, 5.8, 0.4, palette.cream, 0.12);
+  box(g, 4.25, 3, -5.1, 4.5, 5.8, 0.4, palette.cream, 0.12);
+  box(g, 1.4, 4.425, -5.1, 1.2, 2.95, 0.4, palette.cream, 0.08);
   for (const xx of [-6.3, 6.3])
     box(g, xx, 3, -2.4, 0.4, 5.8, 5.5, palette.cream, 0.18);
   box(g, 0, 5.65, -2.5, 13, 0.35, 5.6, palette.cream, 0.15);
@@ -1344,6 +1360,7 @@ function scooter(scene, x, z) {
 }
 function rightForeground(scene) {
   const g = group(scene, 16, 0, 9, -Math.PI / 2);
+  g.name = "core-florist";
   box(g, 0, 4, -3.5, 9, 8, 9, "#286e61", 0.3);
   for (let i = 0; i < 3; i++) archedWindow(g, -2.8 + i * 2.7, 0.3, 1.1, 2, 4.7);
   box(g, 0, 5.5, 1.2, 9.5, 0.3, 0.45, "#739078");
@@ -1373,6 +1390,7 @@ function rightForeground(scene) {
   }
 
   scooter(scene, 13, -4);
+  return g;
 }
 export function buildStreet(scene) {
   seed = 7381;
@@ -1387,7 +1405,7 @@ export function buildStreet(scene) {
   tower(scene, 18, -47, 6, 16, "#e3b8ab");
   billboard(scene, -4.5, 19, -29.6, 3.1, 9.5);
   const air = group(scene, -3.2, 12, -29.75);
-  air.scale.setScalar(.45);
+  air.scale.setScalar(0.45);
   box(air, 0, 0, 0, 3.2, 2.5, 1.1, "#dbcfc0", 0.2);
   const fan = cylinder(air, -0.6, 0, 0.65, 0.9, 0.9, 0.13, "#5e6c72");
   fan.rotation.x = Math.PI / 2;
@@ -1406,7 +1424,7 @@ export function buildStreet(scene) {
   smallBuilding(scene, -5, -19, 7, "#397d69").rotation.y = Math.PI / 2;
   smallBuilding(scene, 16, -17, 7, "#558d78").rotation.y = -Math.PI / 2;
   smallBuilding(scene, 16, -30, 6, "#89ab98").rotation.y = -Math.PI / 2;
-  rightForeground(scene);
+  const florist = rightForeground(scene);
   distantCafe(scene);
   vending(scene, -2.6, 3.3);
   barber(scene, -2.6, 5.0);
@@ -1497,7 +1515,7 @@ export function buildStreet(scene) {
   );
   sky.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = sky;
-  return { cafe };
+  return { cafe, florist };
 }
 
 export {

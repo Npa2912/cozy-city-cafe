@@ -362,3 +362,5 @@ export function buildLife(scene, { cafe }) {
     },
   };
 }
+
+export { person, batchRigidParts };

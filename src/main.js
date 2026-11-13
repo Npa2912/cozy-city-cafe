@@ -5,6 +5,9 @@ import "./style.css";
 import { buildStreet } from "./street.js";
 import { refineStreet } from "./refinement.js";
 import { buildLife } from "./life.js";
+import { extendCity } from "./coastal-district.js";
+import { createFoliageLOD } from "./foliage-lod.js";
+import { CAMERA_VIEWS, WALK_STARTS } from "./camera-views.js";
 import { batchStaticScene } from "./batch-static.js";
 
 const canvas = document.querySelector("#scene");
@@ -28,22 +31,18 @@ if (renderer) {
   renderer.toneMappingExposure = 1.05;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#269add");
-  scene.fog = new THREE.Fog("#b9d5df", 52, 135);
-  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 240);
+  scene.fog = new THREE.Fog("#b9d5df", 95, 280);
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 360);
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = true;
   orbit.maxPolarAngle = Math.PI * 0.56;
-  orbit.minDistance = 3;
-  orbit.maxDistance = 65;
+  orbit.minDistance = 0.8;
+  orbit.maxDistance = 155;
   const pov = new PointerLockControls(camera, canvas);
   const keys = new Set();
-  const views = {
-    overview: { position: [13.8, 11.8, 19.5], target: [-4, 4.8, -10], fov: 57 },
-    flowers: { position: [12, 3.2, 14.5], target: [-4, 4.6, -8], fov: 60 },
-    street: { position: [10.8, 1.9, 5.8], target: [-3.8, 3.2, -8], fov: 65 },
-    counter: { position: [-4.2, 2.2, -6.5], target: [-7.3, 2.25, 0], fov: 65 },
-  };
-  let selectedView = "overview";
+  const views = CAMERA_VIEWS;
+  let selectedView = "expanded";
+  let activeFov = views.expanded.fov;
   const orbitButton = document.querySelector("#orbit");
   const povButton = document.querySelector("#pov");
   const help = document.querySelector("#help");
@@ -58,7 +57,7 @@ if (renderer) {
   }
   let needsRender = true;
   let returnToReference = false;
-  function reset(view = "overview") {
+  function reset(view = "expanded") {
     if (document.pointerLockElement === canvas) {
       returnToReference = true;
       pov.unlock();
@@ -67,12 +66,13 @@ if (renderer) {
     orbit.enableDamping = false;
     orbit.update();
     setMode(false);
-    selectedView = typeof view === "string" ? view : "overview";
+    selectedView = typeof view === "string" ? view : "expanded";
     const preset = views[selectedView];
     camera.position.fromArray(preset.position);
     orbit.target.fromArray(preset.target);
     document.querySelector("#view").value = selectedView;
-    camera.fov = innerWidth < 700 ? 75 : preset.fov;
+    activeFov = preset.fov;
+    camera.fov = innerWidth < 700 ? 75 : activeFov;
     camera.updateProjectionMatrix();
     orbit.update();
     orbit.enableDamping = true;
@@ -81,20 +81,24 @@ if (renderer) {
   reset();
   scene.add(new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.65));
   const sun = new THREE.DirectionalLight(0xffedc4, 3.8);
-  sun.position.set(22, 35, 18);
+  sun.position.set(52, 35, 3);
+  sun.target.position.set(30, 0, -15);
+  scene.add(sun.target);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, {
-    left: -45,
-    right: 45,
-    top: 45,
-    bottom: -45,
-    far: 130,
+    left: -100,
+    right: 100,
+    top: 100,
+    bottom: -100,
+    far: 260,
   });
   sun.shadow.normalBias = 0.03;
   scene.add(sun);
   const district = buildStreet(scene);
   refineStreet(scene, district);
+  const expansion = extendCity(scene, district);
+  expansion.update(0, 0);
   const life = buildLife(scene, district);
   life.update(0, 0);
   scene.traverse((object) => {
@@ -106,12 +110,22 @@ if (renderer) {
       object.castShadow = false;
   });
   batchStaticScene(scene);
-  status.textContent = "ANTELEO · Cà phê, trà sữa & phố hoa";
+  const updateFoliageLOD = createFoliageLOD(scene);
+  updateFoliageLOD(camera);
+  status.textContent = "ANTELEO · Thành phố, biển & câu cá";
   document
     .querySelector("#view")
     .addEventListener("change", (event) => reset(event.target.value));
   orbitButton.addEventListener("click", () => pov.unlock());
   povButton.addEventListener("click", () => {
+    const start = WALK_STARTS[selectedView];
+    if (start) {
+      camera.position.fromArray(start.position);
+      camera.lookAt(new THREE.Vector3(...start.target));
+    }
+    activeFov = 65;
+    camera.fov = innerWidth < 700 ? 75 : activeFov;
+    camera.updateProjectionMatrix();
     pov.lock();
   });
   pov.addEventListener("lock", () => {
@@ -147,13 +161,14 @@ if (renderer) {
   function resize() {
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
-    camera.fov = innerWidth < 700 ? 75 : views[selectedView].fov;
+    camera.fov = innerWidth < 700 ? 75 : activeFov;
     camera.updateProjectionMatrix();
     needsRender = true;
   }
   window.addEventListener("resize", resize);
   resize();
   document.querySelector("#capture").addEventListener("click", () => {
+    updateFoliageLOD(camera);
     renderer.render(scene, camera);
     canvas.toBlob((blob) => {
       if (!blob) return;
@@ -187,6 +202,7 @@ if (renderer) {
     if (playing) {
       time += lifeDelta;
       life.update(lifeDelta, time);
+      expansion.update(lifeDelta, time);
     }
     shadowTime += lifeDelta;
     if (playing && shadowTime > 0.033) {
@@ -203,6 +219,7 @@ if (renderer) {
     }
     const orbitChanged = !pov.isLocked && orbit.update();
     if (needsRender || pov.isLocked || orbitChanged || playing) {
+      updateFoliageLOD(camera);
       renderer.render(scene, camera);
       needsRender = false;
     }
@@ -217,7 +234,7 @@ if (renderer) {
       renderer.render(scene, camera);
       canvas.dataset.ready = "true";
       canvas.setAttribute("aria-busy", "false");
-      status.textContent = "ANTELEO · Cà phê, trà sữa & phố hoa";
+      status.textContent = "ANTELEO · Thành phố, biển & câu cá";
       renderer.setAnimationLoop(animate);
     })
     .catch((error) => {
