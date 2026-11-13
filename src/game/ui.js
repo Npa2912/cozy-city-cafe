@@ -1,3 +1,5 @@
+import { insideCount, isOutside } from "./doorway.js";
+import { TRAFFIC } from "./traffic-config.js";
 import { RECIPES, ACTIONS, QUESTS, money } from "./data.js";
 import { levelFor } from "./economy.js";
 import { currentOrder, recipeFor } from "./orders.js";
@@ -102,7 +104,7 @@ export function gameUI(model, command, onModal) {
       ).length,
       tracked = QUESTS.find((q) => !a.claimed.includes(q.id));
     root.querySelector(".game-hud").innerHTML =
-      `<div class="hud-title"><b>ANTELEO</b><strong>${money(a.cash)}</strong><span>Cấp ${levelFor(a.xp)}</span><progress max="50" value="${a.xp % 50}"></progress></div><div class="hud-counts">${model.queue.length}/3 xếp hàng · ${waiting} đơn · ${free}/2 ghế trống</div><div>${button("business", model.business ? "O · Đang mở bán" : "O · Ngừng nhận khách")}${button("panel", "Đơn", "orders")}${button("panel", "J · Nhiệm vụ", "quests")}${button("panel", "Thu chi", "stats")}${button("panel", "⚙", "settings")}</div>${tracked ? `<small>${tracked.name} · ${Math.min(tracked.target, tracked.stat === "revenue" ? a.revenue : a.stats[tracked.stat]).toLocaleString("vi-VN")}/${tracked.target.toLocaleString("vi-VN")}</small>` : ""}`;
+      `<div class="hud-title"><b>ANTELEO</b><strong>${money(a.cash)}</strong><span>Cấp ${levelFor(a.xp)}</span><progress max="50" value="${a.xp % 50}"></progress></div><div class="hud-counts">${insideCount(model)}/${TRAFFIC.maxInside} trong quán · ${model.customers.filter(isOutside).length}/${TRAFFIC.maxOutside} chờ ngoài · ${waiting} đơn · ${free}/2 ghế trống</div><div>${button("business", model.business ? "O · Đang mở bán" : "O · Ngừng nhận khách")}${button("panel", "Đơn", "orders")}${button("panel", "J · Nhiệm vụ", "quests")}${button("panel", "Thu chi", "stats")}${button("panel", "⚙", "settings")}</div>${tracked ? `<small>${tracked.name} · ${Math.min(tracked.target, tracked.stat === "revenue" ? a.revenue : a.stats[tracked.stat]).toLocaleString("vi-VN")}/${tracked.target.toLocaleString("vi-VN")}</small>` : ""}`;
     const order = currentOrder(model),
       r = recipeFor(order),
       step = tutorialStep(model);

@@ -128,3 +128,38 @@ export function findPath(start, end, shapes, bounds, r = 0.25, step = 0.25) {
   }
   return null;
 }
+
+// Recover intersecting actors restored by older saves, using bounded walking
+// steps. This never disables collision or transports an actor to another point.
+export function separateRestoredActor(
+  position,
+  actors,
+  obstacles,
+  radius,
+  distance,
+) {
+  const penetration = (p) =>
+    actors.reduce(
+      (sum, b) =>
+        sum +
+        Math.max(0, radius + b.radius - Math.hypot(p.x - b.x, p.z - b.z)) ** 2,
+      0,
+    );
+  let score = penetration(position),
+    best = position;
+  if (score < 1e-12) return null;
+  for (let i = 0; i < 24; i++) {
+    const angle = (i * Math.PI) / 12,
+      p = {
+        x: position.x + Math.cos(angle) * distance,
+        z: position.z + Math.sin(angle) * distance,
+      };
+    if (blocked(p, radius, obstacles)) continue;
+    const next = penetration(p);
+    if (next + 1e-12 < score) {
+      score = next;
+      best = p;
+    }
+  }
+  return best;
+}

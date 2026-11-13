@@ -1,6 +1,6 @@
 import { chooseTender, selectedTotal } from "./cash-register.js";
 import { recipeFor } from "./orders.js";
-import { releaseQueue, isHead } from "./queue.js";
+import { isHead } from "./queue.js";
 import { transact } from "./economy.js";
 export function requestPayment(model, order) {
   if (order.status !== "READY") return false;
@@ -78,7 +78,7 @@ export function confirmPayment(model, id) {
   );
   model.register = null;
   model.activeOrder = null;
-  releaseQueue(model, id);
+  // Keep the head slot until the paid patron physically clears the pickup area.
   n.pickedUp = false;
   model.transition(n, "PICKING_UP");
   model.message =

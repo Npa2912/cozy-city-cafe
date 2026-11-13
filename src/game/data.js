@@ -1,10 +1,9 @@
+import { TRAFFIC } from "./traffic-config.js";
 export const CONFIG = {
-  spawnSeconds: 6,
+  ...TRAFFIC,
   drinkSeconds: 18,
   walkSpeed: 1.15,
-  queueLimit: 3,
-  maxCustomers: 7,
-  patienceSeconds: 75,
+  patienceSeconds: 180,
   startCash: 100000,
 };
 export const ACTIONS = {
@@ -132,6 +131,9 @@ export const ORDER_STATES = [
 export const STATES = [
   "WALKING_TO_SHOP",
   "WAITING_AT_ENTRANCE",
+  "ENTERING_DOOR",
+  "WAITING_TO_EXIT",
+  "EXITING_DOOR",
   "QUEUING",
   "WAITING_TO_ORDER",
   "WAITING_FOR_DRINK",

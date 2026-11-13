@@ -78,7 +78,10 @@ export function decodeSave(text) {
       !Array.isArray(a.history) ||
       !a.stats ||
       !Array.isArray(d.customers) ||
-      d.customers.length > CONFIG.maxCustomers ||
+      d.customers.length >
+        (d.trafficVersion && !d.trafficLegacyOverflow
+          ? CONFIG.maxCustomers
+          : 7) ||
       !Array.isArray(d.queue) ||
       d.queue.length > CONFIG.queueLimit ||
       d.seats?.length !== 2 ||
@@ -116,7 +119,17 @@ export function loadGame(storage = localStorage) {
     const current = storage.getItem(SAVE_KEY);
     if (current) {
       const data = decodeSave(current);
-      if (data) return data;
+      if (data) {
+        if (!data.trafficVersion) {
+          try {
+            if (!storage.getItem(SAVE_KEY + ".traffic-backup"))
+              storage.setItem(SAVE_KEY + ".traffic-backup", current);
+          } catch {
+            /* Source remains intact. */
+          }
+        }
+        return data;
+      }
       storage.setItem(SAVE_KEY + ".invalid-backup", current);
       return null;
     }

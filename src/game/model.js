@@ -1,4 +1,5 @@
-import { CONFIG } from "./data.js";
+import { DoorwayController, isOutside } from "./doorway.js";
+import { arrivalDelay } from "./traffic-config.js";
 import { newAccount } from "./economy.js";
 import { admitCustomer, advanceCustomers } from "./customers.js";
 import { startOrder, cancelOrder } from "./orders.js";
@@ -28,12 +29,24 @@ export class CafeGame {
     this.doorOpen = false;
     this.clock = 0;
     this.spawnClock = 0;
+    this.nextArrival = arrivalDelay(random);
+    this.trafficVersion = 1;
+    this.trafficLegacyOverflow =
+      !!saved?.trafficLegacyOverflow || (saved?.customers?.length || 0) > 5;
+    this.doorway = new DoorwayController();
     this.settings = { staticHighlight: false, easyChange: true };
     this.revision = 0;
     this.message = "E mở cửa · O mở bán · Đi vòng bên phải vào lối nhân viên.";
     if (saved)
       for (const key of this.saveKeys())
         if (saved[key] !== undefined) this[key] = saved[key];
+    for (const n of this.customers) {
+      n.inside ??= !isOutside(n) && n.state !== "WALKING_AWAY";
+      if (isOutside(n) && n.outsideSlot === undefined)
+        n.outsideSlot = this.customers
+          .filter(isOutside)
+          .findIndex((o) => o.id === n.id);
+    }
   }
   saveKeys() {
     return [
@@ -51,6 +64,9 @@ export class CafeGame {
       "doorOpen",
       "clock",
       "spawnClock",
+      "nextArrival",
+      "trafficVersion",
+      "trafficLegacyOverflow",
       "settings",
     ];
   }
@@ -136,12 +152,15 @@ export class CafeGame {
   }
   update(dt, move, canReach) {
     this.clock += dt;
+    if (this.customers.length <= 5) this.trafficLegacyOverflow = false;
     advanceCraft(this, dt);
     this.spawnClock += dt;
-    if (this.spawnClock >= CONFIG.spawnSeconds) {
+    if (this.spawnClock >= this.nextArrival) {
       this.spawnClock = 0;
+      this.nextArrival = arrivalDelay(this.random);
       this.admit();
     }
+    this.doorway.update(this);
     advanceCustomers(this, dt, move, canReach);
   }
   snapshot() {

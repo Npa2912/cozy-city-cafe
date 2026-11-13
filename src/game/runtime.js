@@ -2,7 +2,12 @@ import * as THREE from "three";
 import { CafeGame } from "./model.js";
 import { cafeWorld } from "./world.js";
 import { collectObstacles, createPlayerCollision } from "./world-collision.js";
-import { findPath, slide } from "./collision.js";
+import {
+  findPath,
+  slide,
+  blocked,
+  separateRestoredActor,
+} from "./collision.js";
 import { CONFIG } from "./data.js";
 import { tutorialStep } from "./crafting.js";
 import { currentOrder } from "./orders.js";
@@ -48,8 +53,46 @@ export function createCafeGame({
     kind: "circle",
     x: n.pos.x,
     z: n.pos.z,
-    radius: 0.25,
+    radius: CONFIG.radius,
   });
+  model.admissionAllowed = (slot) => {
+    const shapes = [
+      ...navigationObstacles,
+      world.doorShape(),
+      ...model.customers.map(body),
+    ];
+    if (active && pov.isLocked)
+      shapes.push({
+        kind: "circle",
+        x: camera.position.x,
+        z: camera.position.z,
+        radius: 0.28,
+      });
+    return (
+      !blocked(world.layout.spawn, CONFIG.radius, shapes) &&
+      !blocked(world.layout.outsideWaiting[slot], CONFIG.radius, shapes)
+    );
+  };
+  const entryChecks = new Map();
+  model.entryAllowed = (n) => {
+    const cached = entryChecks.get(n.id);
+    if (cached && cached.until > model.clock) return cached.ok;
+    const target = world.layout.queue[Math.max(0, model.queue.indexOf(n.id))];
+    const shapes = [
+      ...navigationObstacles,
+      world.doorShape(),
+      ...model.customers.filter((o) => o !== n).map(body),
+    ];
+    const ok = !!findPath(
+      world.layout.doorInside,
+      target,
+      shapes,
+      bounds,
+      CONFIG.radius,
+    );
+    entryChecks.set(n.id, { ok, until: model.clock + 0.7 });
+    return ok;
+  };
   const collision = createPlayerCollision(
     obstacles,
     () => [world.doorShape(), ...model.customers.map(body)],
@@ -83,7 +126,7 @@ export function createCafeGame({
     (action, id) => {
       if (action === "business") {
         model.toggleBusiness();
-        if (model.business) model.spawnClock = CONFIG.spawnSeconds;
+        if (model.business) model.spawnClock = 0;
       } else if (action === "start" && near("counter")) {
         if (model.startOrder(Number(id))) {
           sound("beep");
@@ -209,7 +252,7 @@ export function createCafeGame({
     }
     if (e.code === "KeyO") {
       model.toggleBusiness();
-      if (model.business) model.spawnClock = CONFIG.spawnSeconds;
+      if (model.business) model.spawnClock = 0;
       ui.render();
       persist();
     }
@@ -226,7 +269,7 @@ export function createCafeGame({
           to,
           [...navigationObstacles, world.doorShape()],
           bounds,
-          0.23,
+          CONFIG.radius,
         ),
       };
       reachCache.set(key, c);
@@ -236,33 +279,59 @@ export function createCafeGame({
   function move(n, target, dt) {
     n.moving = false;
     if (Math.hypot(target.x - n.pos.x, target.z - n.pos.z) < 0.075) return true;
+    if (
+      model.doorway.owner !== null &&
+      model.doorway.owner !== n.id &&
+      ["LEAVING_SHOP", "WALKING_TO_TABLE"].includes(n.state)
+    ) {
+      n.navigation = { blocked: "doorway-priority", stalled: 0 };
+      return false;
+    }
+    const others = model.customers.filter((o) => o !== n).map(body);
+    const recovery = separateRestoredActor(
+      n.pos,
+      others,
+      [...navigationObstacles, world.doorShape()],
+      CONFIG.radius,
+      Math.min(0.035, CONFIG.walkSpeed * dt),
+    );
+    if (recovery) {
+      n.moving = recovery !== n.pos;
+      if (n.moving)
+        n.heading = Math.atan2(recovery.x - n.pos.x, recovery.z - n.pos.z);
+      n.pos = { ...recovery };
+      n.navigation = { blocked: "restored-overlap", stalled: 0 };
+      paths.delete(n.id);
+      return false;
+    }
     let route = paths.get(n.id);
     const signature = `${n.state}/${target.x}/${target.z}/${model.doorOpen}`;
     const doorShape = world.doorShape();
     if (!route || route.signature !== signature || route.retry <= model.clock) {
-      const idle = model.customers
-        .filter(
-          (o) =>
-            o !== n &&
-            [
-              "WAITING_TO_ORDER",
-              "WAITING_FOR_DRINK",
-              "WAITING_FOR_PAYMENT",
-            ].includes(o.state) &&
-            o.queueReady,
-        )
-        .map(body);
+      n.replans = (n.replans || 0) + 1;
+      const idle = model.customers.filter((o) => o !== n).map(body);
       const path = findPath(
         n.pos,
         target,
         [...navigationObstacles, doorShape, ...idle],
         bounds,
-        0.23,
+        CONFIG.radius,
       );
-      route = { signature, path, retry: model.clock + (path ? 3 : 1) };
+      route = {
+        signature,
+        path,
+        retry: model.clock + (path ? CONFIG.replanSeconds : 0.7),
+      };
       paths.set(n.id, route);
     }
-    if (!route.path?.length) return false;
+    if (!route.path?.length) {
+      n.navigation = {
+        blocked: "no-path",
+        stalled: (n.navigation?.stalled || 0) + dt,
+      };
+      return false;
+    }
+    const before = { ...n.pos };
     let budget = CONFIG.walkSpeed * dt;
     const ob = [
       ...navigationObstacles,
@@ -286,7 +355,13 @@ export function createCafeGame({
         continue;
       }
       const distance = Math.min(0.06, budget, l),
-        next = slide(n.pos, (dx / l) * distance, (dz / l) * distance, 0.23, ob);
+        next = slide(
+          n.pos,
+          (dx / l) * distance,
+          (dz / l) * distance,
+          CONFIG.radius,
+          ob,
+        );
       if (Math.hypot(next.x - n.pos.x, next.z - n.pos.z) < distance * 0.3) {
         route.retry = Math.min(route.retry, model.clock + 0.4);
         break;
@@ -295,6 +370,25 @@ export function createCafeGame({
       n.heading = Math.atan2(dx, dz);
       n.moving = true;
       budget -= distance;
+    }
+    const progress = Math.hypot(n.pos.x - before.x, n.pos.z - before.z);
+    n.navigation = {
+      blocked: progress < dt * CONFIG.walkSpeed * 0.15 ? "occupied" : null,
+      stalled:
+        progress < dt * CONFIG.walkSpeed * 0.15
+          ? (n.navigation?.stalled || 0) + dt
+          : 0,
+    };
+    if (n.navigation.stalled > CONFIG.stuckSeconds) {
+      route.retry = model.clock;
+      n.replans = (n.replans || 0) + 1;
+    }
+    if (
+      n.navigation.stalled > CONFIG.seatFallbackSeconds &&
+      n.state === "WALKING_TO_TABLE"
+    ) {
+      // The model's existing unreachable-seat fallback releases its reservation.
+      reachCache.clear();
     }
     return Math.hypot(target.x - n.pos.x, target.z - n.pos.z) < 0.08;
   }
@@ -316,6 +410,10 @@ export function createCafeGame({
     },
     update(dt) {
       if (active) {
+        for (const id of paths.keys())
+          if (!model.customers.some((n) => n.id === id)) paths.delete(id);
+        for (const id of entryChecks.keys())
+          if (!model.customers.some((n) => n.id === id)) entryChecks.delete(id);
         if (dt > 0) onDirty();
         model.update(Math.min(dt, 1), move, canReach);
         saveClock += dt;

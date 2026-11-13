@@ -86,7 +86,7 @@ let b, p;
     __cafeTest.game.model.random = () => 0.99;
   });
   await p.keyboard.press("KeyO");
-  const advance = async (test, limit = 1500) =>
+  const advance = async (test, limit = 4000) =>
     p.evaluate(
       ({ test, limit }) => {
         const { game } = __cafeTest;

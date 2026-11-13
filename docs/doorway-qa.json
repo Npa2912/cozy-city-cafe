@@ -1,0 +1,32 @@
+{
+  "browser": "Chromium, real Three.js runtime and navigation",
+  "simulated_seconds_slow_service": 900,
+  "completed_slow_service": 10,
+  "completed_with_controlled_cases": 18,
+  "normal_peak_inside": 3,
+  "normal_peak_outside_waiting": 1,
+  "controlled_peak_outside_waiting": 2,
+  "maximum_concurrent_door_transits": 1,
+  "normal_minimum_pair_separation_m": 0.801356075348874,
+  "asserted_minimum_pair_separation_m": 0.6,
+  "controlled_cases": {
+    "full_admission_refused": true,
+    "two_simultaneous_exit_requests": true,
+    "incoming_waited_for_exits": true,
+    "all_customers_departed": true
+  },
+  "unit_tests_passed": 58,
+  "production_build": "passed",
+  "limitations": [
+    "Simulation time advanced in 0.1 second steps; not an FPS benchmark.",
+    "Slow-service and controlled scenarios use the actual model APIs to automate brewing and payment.",
+    "Old over-capacity saves retain customers while they drain naturally."
+  ],
+  "ui_regression": {
+    "result": "passed",
+    "flow": "E door, three physical queued customers, POS start, guided cup/espresso/delivery, 100000 VND tender minus 80000 VND change, chair, exit and save",
+    "ending_cash_vnd": 117000,
+    "sales_vnd": 20000,
+    "ingredients_vnd": 3000
+  }
+}
