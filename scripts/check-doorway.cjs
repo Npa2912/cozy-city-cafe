@@ -39,6 +39,7 @@ let browser, page;
     const { game, camera, pov } = __cafeTest;
     const { blocked, findPath } = await import("/src/game/collision.js");
     game.start();
+    game.paused=false;
     pov.unlock();
     const p = game.world.point(-3.7, -3.95);
     camera.position.set(p.x, 2.041, p.z);
@@ -273,7 +274,10 @@ let browser, page;
     const refused = !m.admit();
     m.business = false;
     if (!refused) throw Error("sixth customer accepted");
-    if (m.toggleDoor()) throw Error("door closed on remaining customers");
+    const insideOrders=m.orders.filter(o=>!o.paid&&m.customers.some(n=>n.id===o.customer&&n.inside)).map(o=>o.id);
+    if (!m.toggleDoor() || !m.closeRequested) throw Error("close request not queued");
+    if(m.customers.some(n=>["WALKING_TO_SHOP","WAITING_AT_ENTRANCE"].includes(n.state)))throw Error("outdoor guests not withdrawn");
+    if(insideOrders.some(id=>m.orders.find(o=>o.id===id).status==='CANCELLED'))throw Error("inside order cancelled");
     for (const n of m.customers)
       if (n.state === "SITTING_AND_DRINKING") n.age = CONFIG.drinkSeconds;
     let sameTimeExits = false,
@@ -301,14 +305,15 @@ let browser, page;
     }
     if (m.customers.length)
       throw Error("special cycle stuck " + JSON.stringify(m.customers));
-    if (!sameTimeExits || !waitingEntry || !seenOwnerOut)
+    if (!sameTimeExits || !seenOwnerOut)
       throw Error("special scenarios not actually exercised");
-    if (!m.toggleDoor() || m.doorOpen) throw Error("empty shop did not close");
+    for(let i=0;i<30;i++)step();
+    if (m.doorOpen || m.business) throw Error("empty shop did not auto-close");
     return {
       twoOutside: secondOutside,
       fullRefused: refused,
       twoExits: sameTimeExits,
-      entryWaited: waitingEntry,
+      outsideWithdrawn: true,
       allDeparted: true,
       completed: m.orders.filter((o) => o.status === "COMPLETED").length,
     };
@@ -318,7 +323,7 @@ let browser, page;
     requestAnimationFrame = __raf;
     if (__pendingFrame) __raf(__pendingFrame);
   });
-  await page.screenshot({ path: "/tmp/cozy-doorway.png", timeout: 180000 });
+  await page.screenshot({ path: process.env.SCREENSHOT_PATH || "/tmp/cozy-doorway.png", timeout: 180000 });
   console.log("REAL GEOMETRY DOORWAY PASSED", state);
   await browser.close();
 })().catch(async (e) => {
