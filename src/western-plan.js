@@ -44,6 +44,7 @@ export function bankHeight(x,z){
 export function westernFloor(p){
  const {x,z}=p,b=BRIDGES.find(b=>x>=b.minX&&x<=b.maxX&&Math.abs(z-b.z)<=b.width/2);
  if(b)return bridgeHeight(b,x,z);
+ if(x>=-117&&x<=-107&&z>=29.3&&z<=34.7)return .59;
  if(FOUNTAINS.some(f=>Math.hypot(x-f.x,z-f.z)<3.4))return .39;
  const cross=[-100,22,42].find(v=>Math.abs(z-v)<3.7&&x>=-145&&x<=(v===22?-27:4));
  if(cross!==undefined||([-124,-101,-47].some(v=>Math.abs(x-v)<3.7)&&z>=-106&&z<=50))return -.02;

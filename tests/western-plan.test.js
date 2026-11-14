@@ -20,6 +20,7 @@ test('expanded circulation floors match carriageway, pavement, bridge landing an
  assert.equal(westernFloor({x:-12,z:-100}),-.02);
  assert.equal(westernFloor({x:-12,z:42}),-.02);
  assert.equal(westernFloor({x:-140,z:-80}),-.17);
+ assert.equal(westernFloor({x:-112,z:32}),.59);
  const p=BRIDGES.find(b=>!b.road);assert.equal(westernFloor({x:-96,z:p.z}),.23);
  for(const b of BRIDGES)for(const side of [-1,1]){const x=riverX(b.z)-6.5;let last=null;for(let d=0;d<2;d+=.01){const z=b.z+side*(b.width/2+d);if(forbiddenWater({x,z}))continue;const y=westernFloor({x,z});if(last!==null)assert(Math.abs(y-last)<.03,`${b.id} bank/deck discontinuity`);last=y;}}
 });
