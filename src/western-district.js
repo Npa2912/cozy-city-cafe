@@ -5,9 +5,9 @@ import {districtBuilding} from './neighborhood-buildings.js';
 import {matchingRoad} from './civic-spaces.js';
 import {WEST,WEST_BUILDINGS,WEST_TOWERS,BRIDGES,riverX,riverWidth,bridgeHeight,bankHeight,FOUNTAINS} from './western-plan.js';
 import {person,batchRigidParts} from './life.js';
-function ribbon(points,width,y,material,segments=160,height=null){
+function ribbon(points,width,y,material,segments=160,height=null,clipZ=null){
  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p))),v=[],uv=[],idx=[];
- for(let i=0;i<=segments;i++){const t=i/segments,p=curve.getPoint(t),d=curve.getTangent(t),n=new THREE.Vector3(-d.z,0,d.x).normalize();for(const s of [-1,1]){const x=p.x+s*n.x*(typeof width==='function'?width(p.z):width)/2,z=p.z+s*n.z*(typeof width==='function'?width(p.z):width)/2;v.push(x,height?height(x,z):y,z);uv.push((s+1)/2,t*20)}if(i<segments){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}}
+ for(let i=0;i<=segments;i++){const t=i/segments,p=curve.getPoint(t),d=curve.getTangent(t),n=new THREE.Vector3(-d.z,0,d.x).normalize();for(const s of [-1,1]){const x=p.x+s*n.x*(typeof width==='function'?width(p.z):width)/2,rawZ=p.z+s*n.z*(typeof width==='function'?width(p.z):width)/2,z=clipZ?THREE.MathUtils.clamp(rawZ,clipZ[0],clipZ[1]):rawZ;v.push(x,height?height(x,z):y,z);uv.push((s+1)/2,t*20)}if(i<segments){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}}
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(v,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(idx);geo.computeVertexNormals();const o=new THREE.Mesh(geo,material);o.receiveShadow=true;return o;
 }
 function bridge(scene,b,roadMaterial,tiles){
@@ -76,8 +76,14 @@ export function buildWesternDistrict(scene,district){
   const ped=BRIDGES.find(b=>!b.road);
   for(const[a,b]of[[-97.3,ped.minX],[ped.maxX,-50.7]])box(scene,(a+b)/2,.08,ped.z,b-a,.3,4.4,tilemat,.03);
   for(const side of [-1,1]){
-   const points=riverPoints.map(p=>[p[0]+side*(riverWidth(p[2])/2+1.9),.23,p[2]]);
-   const path=ribbon(points,3.6,.23,tilemat,180,bankHeight);scene.add(path);
+   // End each bank walk at the bridge's outside edge. A continuous ribbon
+   // interpolated across raised curbs otherwise puts triangular paving in lanes.
+   let from=-108;
+   const gaps=[...BRIDGES].sort((a,b)=>a.z-b.z).map(b=>[b.z-b.width/2,b.z+b.width/2]);
+   for(const [to,next]of [...gaps,[48,48]]){
+    if(to>from){const points=[];for(let z=from;z<to;z+=2)points.push([riverX(z)+side*(riverWidth(z)/2+1.9),.23,z]);points.push([riverX(to)+side*(riverWidth(to)/2+1.9),.23,to]);scene.add(ribbon(points,3.6,.23,tilemat,Math.max(2,Math.ceil((to-from)*2)),bankHeight,[from,to]));}
+    from=next;
+   }
    const edgePoints=riverPoints.map(p=>new THREE.Vector3(p[0]+side*(riverWidth(p[2])/2+.08),-.25,p[2]));
    mesh(scene,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(edgePoints),180,.32,6,false),'#c2b8a4');
    for(let z=-92;z<42;z+=12){if(BRIDGES.some(b=>Math.abs(b.z-z)<b.width/2+3)||Math.abs(z-42)<9)continue;const x=riverX(z)+side*(WEST.riverWidth/2+3.6);tree(scene,x,z,4.7+(Math.abs(z)%3),1.3);flowerBox(scene,x,.23,z+2.7,1.6,.7,true);bench(scene,x-side*.9,z+5,side*Math.PI/2);lamp(scene,x,z+7,4.6);}
