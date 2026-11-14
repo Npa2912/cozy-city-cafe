@@ -11,3 +11,8 @@ test('compressed chunks restore exact near geometry, colors, indices, transforms
 test('loading radius follows measured geometry density and upload budget; fast travel increases prefetch',()=>{
  const records=Array.from({length:20},(_,i)=>({center:{x:i*8,z:0},bytes:12*1048576}));const low=budgetRadius(records,{x:0,z:0},'low'),high=budgetRadius(records,{x:0,z:0},'high');assert(high>low);assert(low>=32);assert(preloadDistance(25,300)>preloadDistance(5,300));assert(preloadDistance(25,900)>preloadDistance(25,50));assert(preloadDistance(1000,100000)<=96);
 });
+test('restored chunks retain shared geometry identity so instancing survives eviction and reload',async()=>{
+ const g=new THREE.SphereGeometry(1,10,7),m=new THREE.MeshStandardMaterial(),objects=[];
+ for(let i=0;i<12;i++){const o=new THREE.InstancedMesh(g,m,3);o.position.set(i,0,0);o.updateMatrix();objects.push(o);}
+ const restored=await decodeChunk(await encodeChunk(objects));assert(restored.every(o=>o.geometry===restored[0].geometry));assert.equal(restored.length,12);assert(restored.every(o=>o.count===3));assert.deepEqual([...g.attributes.position.array],[...restored[0].geometry.attributes.position.array]);
+});

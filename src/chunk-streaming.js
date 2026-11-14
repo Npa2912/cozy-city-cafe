@@ -62,9 +62,11 @@ export function createChunkStreaming(scene,renderer,camera){
    const temp=new THREE.Scene();for(let i=0;i<sources.length;i++){const o=sources[i];o.material=r.sourceMaterials[i];o.userData.streamCell=r.key;temp.add(o);}
    await batchStaticSceneAsync(temp,4);
    const objects=[];temp.traverse(o=>{if(o.isMesh)objects.push(o)});install(r,objects);r.sources=[];
-   await renderer.compileAsync(r.high,camera,scene);
    for(const o of objects)o.visible=false;
-   for(const o of objects){if(!alive||!r.wanted)break;o.visible=true;o.castShadow=false;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));o.visible=false;}
+   await renderer.compileAsync(r.high,camera,scene);
+   let page=[],pageBytes=0;
+   const uploadPage=async()=>{for(const o of page){o.visible=true;o.castShadow=false;}await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));for(const o of page)o.visible=false;page=[];pageBytes=0;};
+   for(const o of objects){if(!alive||!r.wanted)break;const bytes=geometryBytes(o);if(page.length&&(pageBytes+bytes>1572864||page.length>=64))await uploadPage();page.push(o);pageBytes+=bytes;}if(page.length)await uploadPage();
    for(const o of objects){o.visible=true;o.castShadow=!!o.userData.originalCast&&r.weight>=.5;}
    r.ready=true;latency=latency*.8+(performance.now()-start)*.2;stats.loadMs=latency;
   }catch(e){console.error('Chunk restore failed',r.key,e);}finally{busy=r.loading=false;}
