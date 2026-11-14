@@ -49,6 +49,7 @@ export class DoorwayController {
       )
     )
       return;
+    if (!next && model.closing) return;
     if (!next && insideCount(model) < TRAFFIC.maxInside) {
       const arrivals = model.customers
         .filter(isOutside)

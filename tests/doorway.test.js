@@ -150,11 +150,12 @@ test("three inside customers block new admission even if the order queue has roo
 test("closing while patrons remain preserves their egress; empty shop closes and stops entrants", () => {
   const g = game();
   g.customers = [customer(1, "WAITING_TO_EXIT", true)];
-  assert(!g.toggleDoor());
+  assert(g.toggleDoor());
   assert(g.doorOpen);
   g.customers[0].inside = false;
   g.customers[0].state = "WALKING_AWAY";
-  assert(g.toggleDoor());
+  g.updateDoorSafety(true);
+  assert(!g.doorOpen);
   g.customers.push(customer(2, "WAITING_AT_ENTRANCE"));
   g.doorway.update(g);
   assert.equal(g.doorway.owner, null);
@@ -281,4 +282,24 @@ test("a paid patron crossing the interior aisle reaches their chair before anoth
   g.customers[0].state = "SITTING_AND_DRINKING";
   g.doorway.update(g);
   assert.equal(g.doorway.owner, 2);
+});
+
+test("stopping sales withdraws outside reservations without cancelling accepted inside orders",()=>{
+ const g=game();g.customers=[customer(1,"WAITING_FOR_DRINK",true),customer(2,"WAITING_AT_ENTRANCE"),customer(3,"WALKING_TO_SHOP")];g.queue=[1,2,3];g.orders=[{customer:1,status:"PREPARING",paid:false}];g.activeOrder=1;
+ const cash=g.account.cash;g.toggleBusiness();assert(!g.business);assert(g.closeRequested);assert.deepEqual(g.queue,[1]);assert.equal(g.orders[0].status,"PREPARING");assert.equal(g.activeOrder,1);assert.equal(g.account.cash,cash);assert(g.customers.slice(1).every(n=>n.state==="WALKING_AWAY"));
+ g.doorway.update(g);assert.equal(g.doorway.owner,null);
+});
+test("close requests do not trap or preempt a customer already crossing",()=>{
+ const g=game();g.customers=[customer(1,"ENTERING_DOOR")];g.customers[0].doorLeg=1;
+ assert(g.toggleDoor(false));assert(g.closeRequested);assert(g.doorOpen);
+ g.updateDoorSafety(true);assert(g.doorOpen);
+ g.customers[0].inside=true;g.customers[0].state="WAITING_TO_ORDER";g.updateDoorSafety(true);assert(!g.doorOpen);
+});
+test("removed doorway owners release the lease and permit queued closure",()=>{
+ const g=game();g.customers=[customer(1,"EXITING_DOOR",true)];g.doorway.update(g);assert.equal(g.doorway.owner,1);
+ g.customers=[];g.doorway.update(g);assert.equal(g.doorway.owner,null);g.toggleBusiness();g.updateDoorSafety(true);assert(!g.doorOpen);
+});
+test("saved closed business sends legacy outdoor waiters away on resume",()=>{
+ const g=game();g.customers=[customer(1,"WAITING_AT_ENTRANCE")];g.queue=[1];g.business=false;
+ const restored=new CafeGame(layout,g.snapshot());assert.equal(restored.customers[0].state,"WALKING_AWAY");assert.deepEqual(restored.queue,[]);
 });

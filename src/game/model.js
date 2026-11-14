@@ -1,3 +1,4 @@
+import { requestClose, withdrawOutside, updateDoorSafety } from "./closing.js";
 import { DoorwayController, isOutside } from "./doorway.js";
 import { arrivalDelay } from "./traffic-config.js";
 import { newAccount } from "./economy.js";
@@ -27,6 +28,8 @@ export class CafeGame {
     this.nextId = 1;
     this.business = false;
     this.doorOpen = false;
+    this.closing = false;
+    this.closeRequested = false;
     this.clock = 0;
     this.spawnClock = 0;
     this.nextArrival = arrivalDelay(random);
@@ -40,6 +43,7 @@ export class CafeGame {
     if (saved)
       for (const key of this.saveKeys())
         if (saved[key] !== undefined) this[key] = saved[key];
+    if(saved && !this.business) withdrawOutside(this);
     for (const n of this.customers) {
       n.inside ??= !isOutside(n) && n.state !== "WALKING_AWAY";
       if (isOutside(n) && n.outsideSlot === undefined)
@@ -62,6 +66,8 @@ export class CafeGame {
       "nextId",
       "business",
       "doorOpen",
+      "closing",
+      "closeRequested",
       "clock",
       "spawnClock",
       "nextArrival",
@@ -84,30 +90,19 @@ export class CafeGame {
     this.touch();
   }
   toggleDoor(clear = true) {
-    if (!clear)
-      return this.notify("Có người trong vùng cửa, hãy lùi khỏi ngưỡng cửa.");
-    if (
-      this.doorOpen &&
-      this.customers.some(
-        (n) =>
-          ![
-            "WALKING_TO_SHOP",
-            "WAITING_AT_ENTRANCE",
-            "WALKING_AWAY",
-            "COMPLETED",
-          ].includes(n.state),
-      )
-    )
-      return this.notify(
-        "Còn khách bên trong: giữ cửa mở để khách ra. Nhấn O để ngừng nhận khách mới.",
-      );
-    this.doorOpen = !this.doorOpen;
-    this.touch();
-    return true;
+    if(this.doorOpen) {
+      requestClose(this);
+      updateDoorSafety(this,clear,clear);
+      return true;
+    }
+    if(!clear)return this.notify("Có người trong vùng cánh cửa, hãy lùi khỏi ngưỡng cửa.");
+    this.doorOpen=true;this.closeRequested=false;this.touch();return true;
   }
+  updateDoorSafety(closingClear,openingClear=closingClear) { updateDoorSafety(this,closingClear,openingClear); }
   toggleBusiness() {
-    this.business = !this.business;
-    this.touch();
+    this.business=!this.business;
+    if(!this.business)requestClose(this);
+    else {this.closing=false;this.closeRequested=false;this.touch();}
   }
   admit() {
     return admitCustomer(this);

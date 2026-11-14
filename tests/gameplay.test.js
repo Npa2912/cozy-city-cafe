@@ -496,18 +496,12 @@ test("a full backup store does not erase or hide safely convertible v1 money", (
   assert.equal(storage.getItem(LEGACY_KEY), old);
 });
 
-test("door stays open for customers inside, permits closing when empty, and guards its swing", () => {
+test("safe requested closure works with diners and reopens for their exit", () => {
   const g = new CafeGame(layout);
-  assert(!g.toggleDoor(false));
-  assert(!g.doorOpen);
-  assert(g.toggleDoor());
-  g.customers = [{ state: "SITTING_AND_DRINKING" }];
-  assert(!g.toggleDoor());
-  assert(g.doorOpen);
-  g.toggleBusiness();
-  g.toggleBusiness();
-  assert(!g.business);
-  g.customers[0].state = "WALKING_AWAY";
-  assert(g.toggleDoor());
-  assert(!g.doorOpen);
+  assert(!g.toggleDoor(false));assert(!g.doorOpen);assert(g.toggleDoor());
+  g.customers = [{ id:1, state:"SITTING_AND_DRINKING", inside:true }];
+  assert(g.toggleDoor());assert(!g.doorOpen);assert(g.closeRequested);
+  g.customers[0].state="LEAVING_SHOP";g.updateDoorSafety(true);assert(g.doorOpen);
+  g.customers[0].state="WALKING_AWAY";g.customers[0].inside=false;
+  g.updateDoorSafety(false);assert(g.doorOpen);g.updateDoorSafety(true);assert(!g.doorOpen);
 });

@@ -428,6 +428,7 @@ export function createCafeGame({
         for (const id of entryChecks.keys())
           if (!model.customers.some((n) => n.id === id)) entryChecks.delete(id);
         if (dt > 0) onDirty();
+        model.updateDoorSafety(world.isDoorClear(camera.position, model.customers, false), world.isDoorClear(camera.position, model.customers, true));
         model.update(Math.min(dt, 1), move, canReach);
         saveClock += dt;
         if (saveClock > 2) {
