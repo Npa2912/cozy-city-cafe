@@ -1,3 +1,4 @@
+import { forbiddenWater, BRIDGES, FOUNTAINS } from "../western-plan.js";
 import * as THREE from "three";
 import { Capsule } from "three/addons/math/Capsule.js";
 import { slide, blocked } from "./collision.js";
@@ -52,6 +53,8 @@ export function collectObstacles(scene) {
 }
 export function createPlayerCollision(obstacles, getDynamic, floorAt) {
   const boundaries = [
+    ...BRIDGES.flatMap(b=>[-1,1].map(side=>({minX:b.minX,maxX:b.maxX,minZ:b.z+side*b.width/2-.06,maxZ:b.z+side*b.width/2+.06}))),
+    ...FOUNTAINS.map(f=>({kind:"circle",x:f.x,z:f.z,radius:1.95})),
     { minX: 66, maxX: 2000, minZ: -2000, maxZ: 9 },
     { minX: 66, maxX: 2000, minZ: 15, maxZ: 2000 },
     { minX: 88, maxX: 2000, minZ: 9, maxZ: 15 },
@@ -75,15 +78,17 @@ export function createPlayerCollision(obstacles, getDynamic, floorAt) {
               b.maxZ > camera.position.z - range &&
               b.minZ < camera.position.z + range,
       );
-      const p = slide(camera.position, dx, dz, 0.28, nearby);
-      p.x = Math.max(-63, Math.min(87.72, p.x));
-      p.z = Math.max(-98, Math.min(46, p.z));
+      let p={x:camera.position.x,z:camera.position.z};
+      const steps=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.07));
+      for(let i=0;i<steps;i++){const next=slide(p,dx/steps,dz/steps,.28,nearby);if(!forbiddenWater(next))p=next;else{const px=slide(p,dx/steps,0,.28,nearby),pz=slide(p,0,dz/steps,.28,nearby);if(!forbiddenWater(px))p=px;else if(!forbiddenWater(pz))p=pz;}}
+      p.x = Math.max(-144.72, Math.min(87.72, p.x));
+      p.z = Math.max(-107.72, Math.min(51.72, p.z));
       camera.position.set(p.x, floorAt(p) + 1.65, p.z);
       capsule.start.set(p.x, floorAt(p) + 0.28, p.z);
       capsule.end.set(p.x, floorAt(p) + 1.37, p.z);
     },
     safe(p) {
-      return !blocked(p, 0.28, [...obstacles, ...boundaries, ...getDynamic()]);
+      return !forbiddenWater(p) && !blocked(p, 0.28, [...obstacles, ...boundaries, ...getDynamic()]);
     },
   };
 }

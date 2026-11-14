@@ -26,11 +26,14 @@ export function createFoliageLOD(scene) {
       radius: sphere.radius,
     });
   });
-  return (camera) => {
+  const lastPosition=new THREE.Vector3(Infinity,Infinity,Infinity);let lastScale=0;
+  return (camera, scale=1) => {
+    if(lastPosition.distanceToSquared(camera.position)<.25 && lastScale===scale)return;
+    lastPosition.copy(camera.position);lastScale=scale;
     for (const batch of batches) {
       const distance = batch.center.distanceTo(camera.position) - batch.radius;
       batch.object.geometry =
-        distance > 80 ? far : distance > 35 ? medium : batch.high;
+        distance > 80*scale ? far : distance > 35*scale ? medium : batch.high;
     }
   };
 }

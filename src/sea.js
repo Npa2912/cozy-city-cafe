@@ -301,7 +301,7 @@ export function buildSea(scene) {
  c+=vec3(.055,.09,.07)*lace*(1.-shore*.95);float crest=pow(max(0.,sin(vWorld.x*.7+vWorld.z*1.2+uTime)*sin(vWorld.z*.7-uTime*.5)),22.);c+=uReflection*crest*uGlint*.4;
  vec3 normal=normalize(vec3(-.08*cos(vWorld.x*.3+uTime),1.,-.07*cos(vWorld.z*.62-uTime)));vec3 halfVector=normalize(normalize(cameraPosition-vWorld)+normalize(uSunDirection));float spec=pow(max(0.,dot(normal,halfVector)),100.);vec3 moonHalf=normalize(normalize(cameraPosition-vWorld)-normalize(uSunDirection));float moonSpec=pow(max(0.,dot(normal,moonHalf)),85.);c+=uReflection*mix(spec,moonSpec,uNight)*uGlint*.7;
  float foam=(1.-smoothstep(.3,1.8,abs(vWorld.x-uShore)+.22*sin(vWorld.z*2.-uTime)))*(.5+.5*sin(vWorld.z*1.5+uTime));c=mix(c,mix(uShallow,vec3(.82,.97,.91),.4),foam*.65*step(-100.,vWorld.z)*step(vWorld.z,55.));
- float haze=smoothstep(120.,260.,distance(cameraPosition,vWorld));c=mix(c,uHaze,haze*.85);float horizon=1.-smoothstep(170.,320.,distance(cameraPosition,vWorld));gl_FragColor=vec4(c,mix(.56,.99,shore)*horizon);
+ float haze=smoothstep(300.,650.,distance(cameraPosition,vWorld));c=mix(c,uHaze,haze*.85);float horizon=1.-smoothstep(600.,900.,distance(cameraPosition,vWorld));gl_FragColor=vec4(c,mix(.56,.99,shore)*horizon);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`,

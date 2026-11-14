@@ -1,3 +1,4 @@
+import { westernFloor } from "../western-plan.js";
 import * as THREE from "three";
 import {
   group,
@@ -267,6 +268,7 @@ export function cafeWorld(scene, cafe, camera) {
       const a = URBAN_PLAN.annex;
       if (p.x > a.minX && p.x < a.maxX && p.z > a.minZ && p.z < a.maxZ)
         return a.floorY;
+      if(p.x<-26||p.z>47||p.z<-96)return westernFloor(p);
       const l = toLocal(p);
       return l.x > -6.2 && l.x < 6.2 && l.z < 1.1 && l.z > -5.1 ? 0.391 : 0.23;
     },
@@ -478,7 +480,7 @@ export function cafeWorld(scene, cafe, camera) {
       for (const [id, a] of actorMap)
         if (!model.customers.some((n) => n.id === id)) {
           a.g.traverse((o) => {
-            if (o.isMesh) o.geometry.dispose();
+            if (o.isMesh && !o.geometry.userData.sharedPrimitive) o.geometry.dispose();
           });
           a.g.removeFromParent();
           actorMap.delete(id);

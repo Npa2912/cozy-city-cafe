@@ -49,7 +49,7 @@ function batchRigidParts(root) {
     root.add(merged);
     objects.forEach((object) => {
       object.removeFromParent();
-      object.geometry.dispose();
+      if (!object.geometry.userData.sharedPrimitive) object.geometry.dispose();
     });
   }
 }

@@ -1,5 +1,13 @@
 // The four established core views are preserved exactly; new views are additive.
 export const CAMERA_VIEWS = {
+  metropolis:{position:[135,125,155],target:[-40,4,-20],fov:42},
+  westDistrict:{position:[-165,78,86],target:[-95,5,-20],fov:54},
+  river:{position:[-102,32,65],target:[-76,0,-30],fov:50},
+  roadBridge:{position:[-96,8,35],target:[-71,1,22],fov:57},
+  gardenBridge:{position:[-93,7,-26],target:[-70,1,-40],fov:58},
+  marketQuarter:{position:[-124,7,18],target:[-123,7,-25],fov:58},
+  toAnteleo:{position:[-54,10,20],target:[-3.8,5,-5],fov:55},
+  citySea:{position:[150,104,130],target:[-25,5,-20],fov:47},
   staff: {
     position: [-7.75, 2.041, -0.65],
     target: [-6.7, 1.55, -0.65],
@@ -20,6 +28,14 @@ export const CAMERA_VIEWS = {
 };
 
 export const WALK_STARTS = {
+  metropolis:{position:[-47,1.63,34],target:[-47,1.8,0]},
+  westDistrict:{position:[-124,1.63,15],target:[-124,1.8,-20]},
+  river:{position:[-81,1.88,-15],target:[-75,1.8,-25]},
+  roadBridge:{position:[-91,1.88,27.2],target:[-68,1.8,27.2]},
+  gardenBridge:{position:[-91,1.88,-39],target:[-65,1.8,-39]},
+  marketQuarter:{position:[-124,1.63,15],target:[-124,1.8,-20]},
+  toAnteleo:{position:[-47,1.63,34],target:[-3.8,2,-5]},
+  citySea:{position:[62,1.9,22],target:[66,1.9,-10]},
   staff: { position: [-7.75, 2.041, -0.65], target: [-6.7, 1.55, -0.65] },
   city: { position: [11.6, 1.9, 20], target: [-3.8, 2, -4] },
   residential: { position: [45.5, 1.9, 23], target: [30, 2, -12] },

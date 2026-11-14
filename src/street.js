@@ -1,3 +1,5 @@
+import { cachedGeometry } from "./geometry-cache.js";
+import { mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
 import * as THREE from "three";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
@@ -43,7 +45,7 @@ function mesh(parent, geometry, material, x = 0, y = 0, z = 0) {
 function box(parent, x, y, z, w, h, d, color, r = 0.08) {
   return mesh(
     parent,
-    new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 3, h / 3, d / 3)),
+    cachedGeometry(`box:${w}:${h}:${d}:${r}`,()=>{const g=mergeVertices(new RoundedBoxGeometry(w,h,d,2,Math.min(r,w/3,h/3,d/3)),1e-6);g.userData.boxRecipe=[w,h,d,Math.min(r,w/3,h/3,d/3)];return g;}),
     color,
     x,
     y,
@@ -53,7 +55,7 @@ function box(parent, x, y, z, w, h, d, color, r = 0.08) {
 function cylinder(parent, x, y, z, rt, rb, h, color, segments = 32) {
   return mesh(
     parent,
-    new THREE.CylinderGeometry(rt, rb, h, segments),
+    cachedGeometry(`cylinder:${rt}:${rb}:${h}:${segments}`,()=>new THREE.CylinderGeometry(rt, rb, h, segments)),
     color,
     x,
     y,
@@ -61,7 +63,7 @@ function cylinder(parent, x, y, z, rt, rb, h, color, segments = 32) {
   );
 }
 function sphere(parent, x, y, z, rx, ry, rz, color) {
-  const o = mesh(parent, new THREE.SphereGeometry(1, 20, 12), color, x, y, z);
+  const o = mesh(parent, cachedGeometry("sphere:20:12",()=>new THREE.SphereGeometry(1,20,12)), color, x, y, z);
   o.scale.set(rx, ry, rz);
   return o;
 }
@@ -97,7 +99,7 @@ function rod(parent, a, b, r, color) {
   return o;
 }
 function torus(parent, x, y, z, r, t, color, rotation = 0) {
-  const o = mesh(parent, new THREE.TorusGeometry(r, t, 10, 48), color, x, y, z);
+  const o = mesh(parent, cachedGeometry(`torus:${r}:${t}`,()=>new THREE.TorusGeometry(r,t,10,48)), color, x, y, z);
   o.rotation.y = rotation;
   return o;
 }
@@ -163,19 +165,11 @@ function archShape(w, h) {
   return s;
 }
 function arch(parent, x, y, z, w, h, depth, color) {
-  const geometry = new THREE.ExtrudeGeometry(archShape(w, h), {
-    depth,
-    bevelEnabled: true,
-    bevelSize: 0.05,
-    bevelThickness: 0.04,
-    bevelSegments: 3,
-    steps: 1,
-    curveSegments: 32,
+  const geometry = cachedGeometry(`arch:${w}:${h}:${depth}`,()=>{
+    const g=new THREE.ExtrudeGeometry(archShape(w,h),{depth,bevelEnabled:true,bevelSize:.05,bevelThickness:.04,bevelSegments:3,steps:1,curveSegments:32});
+    const uv=g.attributes.uv,p=g.attributes.position;for(let i=0;i<uv.count;i++)uv.setXY(i,(p.getX(i)+w/2)/w,p.getY(i)/h);
+    const indexed=mergeVertices(g,1e-6);g.dispose();indexed.userData.archRecipe=[w,h,depth];return indexed;
   });
-  const uv = geometry.attributes.uv,
-    position = geometry.attributes.position;
-  for (let i = 0; i < uv.count; i++)
-    uv.setXY(i, (position.getX(i) + w / 2) / w, position.getY(i) / h);
   return mesh(parent, geometry, color, x, y, z);
 }
 let warmWindow;
@@ -530,6 +524,8 @@ function ground(scene) {
     [36.25, 3.5],
   ]) {
     const part = box(scene, 17, 0.08, z, 17, 0.3, d, pmat, 0.05);
+    part.geometry = part.geometry.clone();
+    delete part.geometry.userData.sharedPrimitive;
     const uv = part.geometry.attributes.uv,
       p = part.geometry.attributes.position,
       n = part.geometry.attributes.normal;
@@ -567,7 +563,7 @@ function ground(scene) {
     mat("#ffffff", { map: sidewalk }),
     0.01,
   );
-  return roadMaterial;
+  return {roadMaterial,pavementMaterial:pmat};
 }
 
 function flowerLogo(parent, x, y, z, size = 1) {
@@ -1470,7 +1466,7 @@ function rightForeground(scene) {
 }
 export function buildStreet(scene) {
   seed = 7381;
-  const roadMaterial = ground(scene);
+  const {roadMaterial,pavementMaterial} = ground(scene);
   // Street axis extends from the foreground to the market at the vanishing point.
   tower(scene, -14, -9, 7, 21, "#e6e0d9");
   tower(scene, -10, -17, 6.5, 16, "#e1c35c", 2);
@@ -1604,7 +1600,7 @@ export function buildStreet(scene) {
   );
   sky.mapping = THREE.EquirectangularReflectionMapping;
   scene.background = sky;
-  return { cafe, florist, roadMaterial };
+  return { cafe, florist, roadMaterial, pavementMaterial };
 }
 
 export {

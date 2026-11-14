@@ -580,26 +580,8 @@ function finishFloristBack(florist) {
 function westernGarden(scene, tiles) {
   // The wider camera reveals the old unused base behind the town. Finish it as
   // a residential garden edge, keeping the approved alley and stair untouched.
-  paved(scene, -27.25, -8, 3.5, 66, tiles);
-  paved(scene, -29.25, 24, 15.5, 1.8, tiles);
-  paved(scene, -29.25, -40, 15.5, 1.8, tiles);
-  const meadow = artwork(
-    (c, W, H) => {
-      c.fillStyle = "#a6b58b";
-      c.fillRect(0, 0, W, H);
-      for (let i = 0; i < 6000; i++) {
-        c.fillStyle = ["#9bac82", "#b6bf9b", "#a7b88c"][i % 3];
-        c.fillRect(random() * W, random() * H, 1, 2 + random() * 3);
-      }
-    },
-    512,
-    512,
-  );
-  meadow.wrapS = meadow.wrapT = THREE.RepeatWrapping;
-  meadow.repeat.set(5, 12);
-  const grass = mat("#fff", { map: meadow });
-  box(scene, -43.25, 0.02, -28, 43.5, 0.2, 150, grass, 0.02);
-  sphere(scene, -52, -1, -20, 14, 8, 90, grass);
+  paved(scene,-27.25,-13,3.5,56,tiles);
+  paved(scene,-27.25,34,3.5,10,tiles);
   for (const [x, z, color] of [
     [-29, 10, "#9bbfb2"],
     [-29, -10, "#d2afba"],
@@ -617,47 +599,8 @@ function westernGarden(scene, tiles) {
       sign:
         z === 10 ? "GARDEN COTTAGE" : z === -10 ? "ROSE HOUSE" : "HILL VIEW",
     });
-  const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-36.5, 0.231, 24),
-    new THREE.Vector3(-36.7, 0.231, 10),
-    new THREE.Vector3(-36.1, 0.231, -8),
-    new THREE.Vector3(-36.7, 0.231, -24),
-    new THREE.Vector3(-36.5, 0.231, -40),
-  ]);
-  const vertices = [],
-    uvs = [],
-    indices = [];
-  for (let i = 0; i <= 64; i++) {
-    const t = i / 64,
-      p = curve.getPoint(t),
-      tangent = curve.getTangent(t),
-      n = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-    for (const side of [-1, 1]) {
-      vertices.push(p.x + n.x * 0.85 * side, p.y, p.z + n.z * 0.85 * side);
-      uvs.push(side < 0 ? 0 : 1, t * 22);
-    }
-    if (i < 64) {
-      const j = i * 2;
-      indices.push(j, j + 1, j + 2, j + 1, j + 3, j + 2);
-    }
-  }
-  const path = new THREE.BufferGeometry();
-  path.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
-  path.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
-  path.setIndex(indices);
-  path.computeVertexNormals();
-  mesh(scene, path, mat("#e0ccb0", { side: THREE.DoubleSide }));
-  for (const x of [-60, -50, -40])
-    for (const z of [-65, -43, -20, 2, 22]) {
-      const q = ((x + 52) / 14) ** 2 + ((z + 20) / 90) ** 2;
-      const t = tree(scene, x, z, 5.4 + random(), 1.8);
-      t.parent.position.y = Math.max(
-        0.12,
-        -1 + 8 * Math.sqrt(Math.max(0, 1 - q)),
-      );
-    }
   // Small park shelter is placed on the flat foreground, outside the hill.
-  const g = group(scene, -33, 0.23, 18);
+  const g = group(scene, -31.4, 0.23, 32);
   cylinder(g, 0, 0.03, 0, 2.45, 2.45, 0.08, "#ccb992", 48);
   for (let i = 0; i < 6; i++) {
     const a = (i * Math.PI) / 3;
@@ -677,15 +620,12 @@ function westernGarden(scene, tiles) {
   chair(g, 0.9, 0.08, 0, -Math.PI / 2);
   lantern(g, 0, 3.2, 0, 1.1);
   rod(g, [0, 3.55, 0], [0, 4.2, 0], 0.02, "#8a815e");
-  paved(scene, -33, 22.2, 1.4, 3.6, tiles);
-  paved(scene, -35.3, -15, 2, 3.5, tiles);
-  bench(scene, -35, -15, -Math.PI / 2);
-  flowerBox(scene, -34.7, 0.12, -18, 1.4, 0.65, true);
-  flowerBox(scene, -29.8, 0.23, 18, 1.3, 0.65, true);
-  const sign = group(scene, -27.2, 0.23, 24.8);
-  cylinder(sign, 0, 1.1, 0, 0.055, 0.07, 2.2, "#8d7a58");
-  box(sign, 0, 2.04, 0, 2.1, 0.45, 0.13, "#83a18a", 0.07);
-  label(sign, "GARDEN WALK", 0, 2.04, 0.075, 1.9, 0.3, "#f6e5b9", "#83a18a");
+  paved(scene,-29,35.5,5,2,tiles);
+  flowerBox(scene,-28.2,.23,32,1.3,.65,true);
+  const sign=group(scene,-27.2,.23,36.8);
+  cylinder(sign,0,1.1,0,.055,.07,2.2,'#8d7a58');
+  label(sign,'GARDEN WALK',0,2.04,.075,1.9,.3,'#f6e5b9','#83a18a');
+
 }
 export function extendCity(scene, district) {
   let sea, marine, coastalWalker, fisher;

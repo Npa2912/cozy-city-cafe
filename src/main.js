@@ -1,3 +1,6 @@
+import { createChunkStreaming } from "./chunk-streaming.js";
+import { renderQuality } from "./render-quality.js";
+import { buildWesternDistrict } from "./western-district.js";
 import { createDayNight } from "./systems/DayNightCycle.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -8,9 +11,9 @@ import { buildStreet } from "./street.js";
 import { refineStreet } from "./refinement.js";
 import { buildLife } from "./life.js";
 import { extendCity } from "./coastal-district.js";
-import { createFoliageLOD } from "./foliage-lod.js";
+
 import { CAMERA_VIEWS, WALK_STARTS } from "./camera-views.js";
-import { batchStaticScene } from "./batch-static.js";
+
 
 const canvas = document.querySelector("#scene");
 const status = document.querySelector("#status");
@@ -34,19 +37,20 @@ if (renderer) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color("#269add");
   scene.fog = new THREE.Fog("#b9d5df", 170, 450);
-  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 360);
+  const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 750);
+  scene.fog.far=680;scene.fog.near=220;
   const orbit = new OrbitControls(camera, canvas);
   orbit.enableDamping = true;
   orbit.maxPolarAngle = Math.PI * 0.56;
   orbit.minDistance = 0.8;
-  orbit.maxDistance = 155;
+  orbit.maxDistance = 430;
   const pov = new PointerLockControls(camera, canvas);
   const keys = new Set();
   const views = CAMERA_VIEWS;
   const requestedView = new URLSearchParams(location.search).get("view");
   let selectedView = Object.hasOwn(views, requestedView)
     ? requestedView
-    : "city";
+    : "metropolis";
   let activeFov = views[selectedView].fov;
   const orbitButton = document.querySelector("#orbit");
   const povButton = document.querySelector("#pov");
@@ -63,7 +67,7 @@ if (renderer) {
   let game;
   let needsRender = true;
   let returnToReference = false;
-  function reset(view = "city") {
+  function reset(view = "metropolis") {
     if (document.pointerLockElement === canvas) {
       returnToReference = true;
       pov.unlock();
@@ -73,7 +77,7 @@ if (renderer) {
     orbit.enableDamping = false;
     orbit.update();
     setMode(false);
-    selectedView = typeof view === "string" ? view : "city";
+    selectedView = typeof view === "string" ? view : "metropolis";
     const preset = views[selectedView];
     camera.position.fromArray(preset.position);
     orbit.target.fromArray(preset.target);
@@ -109,6 +113,8 @@ if (renderer) {
   expansion.update(0, 0);
   const life = buildLife(scene, district);
   life.update(0, 0);
+  const western = buildWesternDistrict(scene, district);
+  western.update(0);
   const environment = createDayNight({
     scene,
     camera,
@@ -128,6 +134,17 @@ if (renderer) {
       needsRender = true;
     },
   });
+  scene.traverse((object) => {
+    if (
+      object.isMesh &&
+      !Array.isArray(object.material) &&
+      object.material.transparent
+    )
+      object.castShadow = false;
+  });
+  const quality=renderQuality(renderer,sun,scene);
+  const chunks=createChunkStreaming(scene,renderer,camera);
+  const updateFoliageLOD = (camera)=>quality.update(camera);
   if (import.meta.env.DEV && new URLSearchParams(location.search).has("test"))
     window.__cafeTest = {
       game,
@@ -138,17 +155,11 @@ if (renderer) {
       renderer,
       sun,
       ambient,
+      chunks,
+      quality,
+      western,
     };
-  scene.traverse((object) => {
-    if (
-      object.isMesh &&
-      !Array.isArray(object.material) &&
-      object.material.transparent
-    )
-      object.castShadow = false;
-  });
-  batchStaticScene(scene);
-  const updateFoliageLOD = createFoliageLOD(scene);
+
   updateFoliageLOD(camera);
   status.textContent = "ANTELEO · Thành phố, biển & câu cá";
   document
@@ -203,7 +214,7 @@ if (renderer) {
       pov.unlock();
       return;
     }
-    if (pov.isLocked && ["KeyW", "KeyA", "KeyS", "KeyD"].includes(event.code)) {
+    if (pov.isLocked && ["KeyW", "KeyA", "KeyS", "KeyD", "ShiftLeft", "ShiftRight"].includes(event.code)) {
       event.preventDefault();
       keys.add(event.code);
     }
@@ -259,24 +270,29 @@ if (renderer) {
     shadowTime = 0;
   const animate = () => {
     const elapsed = clock.getDelta();
+    const environmentStart=performance.now();
     environment.update(elapsed, playing);
+    const environmentMs=performance.now()-environmentStart;
     const delta = Math.min(elapsed, 0.05);
     const lifeDelta = Math.min(elapsed, 1);
     if (playing) {
       time += lifeDelta;
       life.update(lifeDelta, time);
       expansion.update(lifeDelta, time);
+      western.update(time);
     }
     shadowTime += lifeDelta;
-    if ((playing || game.active) && shadowTime > 0.12) {
+    if ((playing || game.active) && shadowTime > quality.settings.shadowInterval) {
       renderer.shadowMap.needsUpdate = true;
       shadowTime = 0;
     }
+    const npcStart=performance.now();
     game.update(lifeDelta);
+    const npcMs=performance.now()-npcStart;
     if (pov.isLocked && !game.modal) {
       const forward = Number(keys.has("KeyW")) - Number(keys.has("KeyS"));
       const right = Number(keys.has("KeyD")) - Number(keys.has("KeyA"));
-      const speed = (5 * delta) / (Math.hypot(forward, right) || 1);
+      const speed = ((keys.has("ShiftLeft")||keys.has("ShiftRight")?9:5) * delta) / (Math.hypot(forward, right) || 1);
       const direction = camera.getWorldDirection(new THREE.Vector3());
       direction.y = 0;
       direction.normalize();
@@ -288,18 +304,22 @@ if (renderer) {
         direction.z * forward * speed + side.z * right * speed,
       );
     }
+    chunks.update(elapsed,quality.level);
     const orbitChanged = orbit.enabled && !pov.isLocked && orbit.update();
     if (
       needsRender ||
+      chunks.needsRender ||
       renderer.shadowMap.needsUpdate ||
       pov.isLocked ||
       orbitChanged ||
       playing ||
       (game.active && lifeDelta > 0)
     ) {
-      environment.apply();
       updateFoliageLOD(camera);
+      environment.apply();
+      const submitStart=performance.now();
       renderer.render(scene, camera);
+      quality.sample(elapsed,{environmentMs,npcMs,submitMs:performance.now()-submitStart});
       needsRender = false;
     }
   };

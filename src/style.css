@@ -230,3 +230,8 @@ footer {
 #app:has(.game-modal:not([hidden])) #world-clock {
   visibility: hidden;
 }
+#graphics-quality {position:absolute;left:18px;bottom:88px;z-index:4;background:#fff8e9ed;color:#315247;padding:7px 10px;border-radius:10px;font-size:12px;}
+#graphics-quality select {background:#fff8e9;color:#315247;border:1px solid #92ac9c;border-radius:5px;padding:3px;}
+#performance-panel {position:absolute;left:16px;top:155px;z-index:20;background:#183b3bdc;color:#edfaef;padding:10px;border-radius:8px;font:11px/1.5 monospace;pointer-events:none;}
+@media(max-width:600px){#graphics-quality{left:8px;bottom:226px;font-size:11px;}#performance-panel{top:210px;left:8px;font-size:10px;}}
+#app:has(.game-modal:not([hidden])) #graphics-quality {visibility:hidden;}
