@@ -1,3 +1,4 @@
+import { installShadowGeometryLOD } from './shadow-geometry.js';
 import { createChunkStreaming } from "./chunk-streaming.js";
 import { renderQuality } from "./render-quality.js";
 import { buildWesternDistrict } from "./western-district.js";
@@ -144,6 +145,7 @@ if (renderer) {
   });
   const quality=renderQuality(renderer,sun,scene);
   const chunks=createChunkStreaming(scene,renderer,camera);
+  const shadowLOD=installShadowGeometryLOD(renderer,sun,scene);
   const updateFoliageLOD = (camera)=>quality.update(camera);
   if (import.meta.env.DEV && new URLSearchParams(location.search).has("test"))
     window.__cafeTest = {
@@ -158,6 +160,7 @@ if (renderer) {
       chunks,
       quality,
       western,
+      shadow:shadowLOD.stats,
     };
 
   updateFoliageLOD(camera);

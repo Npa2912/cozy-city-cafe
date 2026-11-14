@@ -6,6 +6,7 @@ test('compressed chunks restore exact near geometry, colors, indices, transforms
  const inst=new THREE.InstancedMesh(new THREE.SphereGeometry(1,12,8),m.material,2);inst.setMatrixAt(0,new THREE.Matrix4().makeTranslation(5,6,7));inst.setMatrixAt(1,new THREE.Matrix4().makeScale(2,1,3));inst.setColorAt(0,new THREE.Color('#abcdef'));inst.setColorAt(1,new THREE.Color('#7788aa'));inst.computeBoundingSphere();
  const encoded=await encodeChunk([m,inst]),restored=await decodeChunk(encoded);assert(encoded.blob.size<encoded.rawBytes);
  for(let i=0;i<2;i++){const a=[m,inst][i],b=restored[i];assert.deepEqual([...a.geometry.attributes.position.array],[...b.geometry.attributes.position.array]);assert.deepEqual([...a.geometry.index.array],[...b.geometry.index.array]);assert.deepEqual(a.matrix.toArray(),b.matrix.toArray());assert.equal(a.castShadow,b.castShadow);}
+ assert.deepEqual(restored[1].geometry.userData.shadowSphere,[1,12,8]);
  assert.deepEqual([...inst.instanceMatrix.array],[...restored[1].instanceMatrix.array]);assert.deepEqual([...inst.instanceColor.array],[...restored[1].instanceColor.array]);assert.deepEqual([...g.attributes.color.array],[...restored[0].geometry.attributes.color.array]);
 });
 test('loading radius follows measured geometry density and upload budget; fast travel increases prefetch',()=>{

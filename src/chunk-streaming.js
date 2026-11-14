@@ -1,3 +1,4 @@
+import {mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {batchStaticScene,batchStaticSceneAsync} from './batch-static.js';
@@ -5,6 +6,7 @@ import {encodeChunk,decodeChunk} from './chunk-codec.js';
 import {CHUNK_POLICY,budgetRadius,preloadDistance} from './chunk-policy.js';
 const lowCache=new Map();
 function lowGeometry(g,plants=false){
+ if(g.userData.preserveUV){g.userData.sharedPrimitive=true;return g;}
  const key=g.uuid+(plants?":plants":"");if(lowCache.has(key))return lowCache.get(key);const p=g.parameters||{};let low;
  try{
   if(g.userData.archRecipe){const[w,h,d]=g.userData.archRecipe;low=new THREE.ExtrudeGeometry(p.shapes,{...p.options,curveSegments:8,bevelSegments:1});const uv=low.attributes.uv,v=low.attributes.position;for(let i=0;i<uv.count;i++)uv.setXY(i,(v.getX(i)+w/2)/w,v.getY(i)/h);}
@@ -15,6 +17,7 @@ function lowGeometry(g,plants=false){
   else if(g.type==='TorusGeometry')low=new THREE.TorusGeometry(p.radius,p.tube,Math.min(p.radialSegments,6),Math.min(p.tubularSegments,24),p.arc);
   else if(g.type==='ExtrudeGeometry')low=new THREE.ExtrudeGeometry(p.shapes,{...p.options,curveSegments:8,bevelSegments:1});
  }catch{low=null;}
+ if(low&&!low.index){const indexed=mergeVertices(low,1e-6);low.dispose();low=indexed;}
  low||=g;low.userData.sharedPrimitive=true;lowCache.set(key,low);return low;
 }
 const dynamic=o=>{while(o){if(o.userData.dynamic)return true;o=o.parent;}return false;};
@@ -64,7 +67,13 @@ export function createChunkStreaming(scene,renderer,camera){
    await batchStaticSceneAsync(temp,4);
    const objects=[];temp.traverse(o=>{if(o.isMesh)objects.push(o)});install(r,objects);r.sources=[];
    for(const o of objects)o.visible=false;
-   await renderer.compileAsync(r.high,camera,scene);
+   const compiled=await new Promise((resolve,reject)=>{
+    let done=false;const finish=value=>{if(done)return;done=true;r.cancelWarm=null;resolve(value);};
+    r.cancelWarm=()=>finish(false);
+    renderer.compileAsync(r.high,camera,scene).then(()=>finish(true),error=>{if(!done){done=true;r.cancelWarm=null;reject(error);}});
+    if(!alive||!r.wanted)finish(false);
+   });
+   if(!compiled){disposeObjects(r.raw);r.raw=[];r.ready=false;return;}
    let page=[],pageBytes=0;
    const uploadPage=async()=>{
     for(const o of page){o.visible=true;o.castShadow=false;o.userData.warmFrustum=o.frustumCulled;o.frustumCulled=false;}
@@ -74,7 +83,7 @@ export function createChunkStreaming(scene,renderer,camera){
    for(const o of objects){if(!alive||!r.wanted)break;const bytes=geometryBytes(o);if(page.length&&(pageBytes+bytes>1572864||page.length>=64)){await uploadPage();if(!alive||!r.wanted)break;}page.push(o);pageBytes+=bytes;}if(page.length&&alive&&r.wanted)await uploadPage();
    for(const o of objects){o.visible=true;o.castShadow=!!o.userData.originalCast&&r.weight>=.5;}
    r.ready=true;latency=latency*.8+(performance.now()-start)*.2;stats.loadMs=latency;
-  }catch(e){console.error('Chunk restore failed',r.key,e);}finally{busy=r.loading=false;}
+  }catch(e){disposeObjects(r.raw);r.raw=[];r.ready=false;console.error('Chunk restore failed',r.key,e);}finally{r.cancelWarm=null;busy=r.loading=false;}
  }
  function plan(level){const projectedError=.08*renderer.domElement.height/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*Math.max(1,camera.position.y));const distantOverview=projectedError<.9;radius=budgetRadius(records,camera.position,level);preload=preloadDistance(velocity.length(),latency);const direction=velocity.clone().normalize();const ahead=camera.position.clone().addScaledVector(direction,preload);const facing=camera.getWorldDirection(new THREE.Vector3());facing.y=0;ahead.addScaledVector(facing.normalize(),16);
   for(const r of records){const d=Math.hypot(r.center.x-camera.position.x,r.center.z-camera.position.z),predicted=Math.hypot(r.center.x-ahead.x,r.center.z-ahead.z);const selected=d<radius+16||(d<radius+preload&&predicted<radius);r.priority=d<CHUNK_POLICY.nearRadius?d-1000:d-Math.max(0,r.center.clone().sub(camera.position).normalize().dot(direction))*preload*.7;r.wanted=r.pinned||(!distantOverview&&(selected||(r.wanted&&d<radius+preload+32)));}

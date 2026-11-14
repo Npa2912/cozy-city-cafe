@@ -526,6 +526,7 @@ function ground(scene) {
     const part = box(scene, 17, 0.08, z, 17, 0.3, d, pmat, 0.05);
     part.geometry = part.geometry.clone();
     delete part.geometry.userData.sharedPrimitive;
+    part.geometry.userData.preserveUV=true;
     const uv = part.geometry.attributes.uv,
       p = part.geometry.attributes.position,
       n = part.geometry.attributes.normal;
