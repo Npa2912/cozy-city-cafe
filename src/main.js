@@ -1,3 +1,4 @@
+import { createDayNight } from "./systems/DayNightCycle.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
@@ -85,7 +86,8 @@ if (renderer) {
     needsRender = true;
   }
   reset(selectedView);
-  scene.add(new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.2));
+  const ambient = new THREE.HemisphereLight(0xd6efff, 0xc1b398, 1.2);
+  scene.add(ambient);
   const sun = new THREE.DirectionalLight(0xffedc4, 3.5);
   sun.position.set(52, 35, 3);
   sun.target.position.set(30, 0, -15);
@@ -107,6 +109,14 @@ if (renderer) {
   expansion.update(0, 0);
   const life = buildLife(scene, district);
   life.update(0, 0);
+  const environment = createDayNight({
+    scene,
+    camera,
+    renderer,
+    sun,
+    ambient,
+    storage: localStorage,
+  });
   game = createCafeGame({
     scene,
     cafe: district.cafe,
@@ -119,7 +129,16 @@ if (renderer) {
     },
   });
   if (import.meta.env.DEV && new URLSearchParams(location.search).has("test"))
-    window.__cafeTest = { game, camera, pov };
+    window.__cafeTest = {
+      game,
+      camera,
+      pov,
+      environment,
+      scene,
+      renderer,
+      sun,
+      ambient,
+    };
   scene.traverse((object) => {
     if (
       object.isMesh &&
@@ -222,14 +241,25 @@ if (renderer) {
   updateMotionLabel();
   motionButton.addEventListener("click", () => {
     playing = !playing;
+    game.paused = !playing;
     updateMotionLabel();
     needsRender = true;
   });
+  document.querySelector("#game-start").addEventListener("click", () => {
+    playing = true;
+    game.paused = false;
+    updateMotionLabel();
+  });
   const clock = new THREE.Clock();
+  document.addEventListener("visibilitychange", () => {
+    clock.getDelta();
+    if (document.hidden) environment.persist();
+  });
   let time = 0,
     shadowTime = 0;
   const animate = () => {
     const elapsed = clock.getDelta();
+    environment.update(elapsed, playing);
     const delta = Math.min(elapsed, 0.05);
     const lifeDelta = Math.min(elapsed, 1);
     if (playing) {
@@ -261,11 +291,13 @@ if (renderer) {
     const orbitChanged = orbit.enabled && !pov.isLocked && orbit.update();
     if (
       needsRender ||
+      renderer.shadowMap.needsUpdate ||
       pov.isLocked ||
       orbitChanged ||
       playing ||
       (game.active && lifeDelta > 0)
     ) {
+      environment.apply();
       updateFoliageLOD(camera);
       renderer.render(scene, camera);
       needsRender = false;

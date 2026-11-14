@@ -12,7 +12,7 @@ This version continues the existing Three.js city. The player replaces the fixed
 
 The door stays open while customers remain inside so their exit cannot be blocked; use O to stop new admission. Once they leave, E can close it. The swing area must be clear.
 
-WASD/mouse move and look; Escape releases the pointer. **J** opens quests. The settings panel offers static highlights, easy change and immediate saving. **H** gives a short reminder instead of the old recipe notebook. The preview's pause button stops street animation; the active café simulation continues.
+WASD/mouse move and look; Escape releases the pointer. **J** opens quests. The settings panel offers static highlights, easy change and immediate saving. **H** gives a short reminder instead of the old recipe notebook. The pause button now stops the street, café simulation and world clock together; resume continues them without catch-up.
 
 ## Orders, recipes and cash
 

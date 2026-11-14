@@ -1,0 +1,45 @@
+{
+  "clock_ratio": "1 real second = 1 game minute",
+  "new_game": "Day 1, 07:00",
+  "unit_tests": {
+    "passed": 64,
+    "failed": 0,
+    "includes": [
+      "30/60 FPS and irregular frame equality",
+      "1440 real seconds per game day",
+      "midnight and save/restore",
+      "pause/resume",
+      "smooth lighting and sun direction",
+      "existing orders, cash, quests, collision, customers and fish"
+    ]
+  },
+  "chromium_development": {
+    "hours_verified": [
+      9,
+      12,
+      18,
+      21
+    ],
+    "actual_debug_buttons": true,
+    "day_2_restored": true,
+    "mobile_overflow": false,
+    "gameplay_pause_resume": true,
+    "javascript_shader_errors": []
+  },
+  "chromium_final_production": {
+    "views": {
+      "18:00": "street",
+      "21:00": "coast"
+    },
+    "saved_time_restored": true,
+    "debug_panel_present": false,
+    "test_bridge_present": false,
+    "javascript_shader_errors": []
+  },
+  "build": "passed; non-fatal Vite bundle size advisory",
+  "limits": [
+    "Four nearby local fixture lights, distant emission instead of per-window dynamic lights.",
+    "Procedural sun/moon water highlights, not ray-traced city reflections.",
+    "No hardware FPS guarantee claimed."
+  ]
+}

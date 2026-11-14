@@ -236,6 +236,11 @@ function lighthouse(scene) {
 export function buildSea(scene) {
   const uniforms = {
     uTime: { value: 0 },
+    uReflection: { value: new THREE.Color("#fff0d0") },
+    uSunDirection: { value: new THREE.Vector3(1, 1, 0).normalize() },
+    uGlint: { value: 0.5 },
+    uNight: { value: 0 },
+    uHaze: { value: new THREE.Color("#b9d5df") },
     uShore: { value: P.shoreX },
     uShallow: { value: new THREE.Color("#43c6ca") },
     uDeep: { value: new THREE.Color("#188bb2") },
@@ -290,12 +295,13 @@ export function buildSea(scene) {
     side: THREE.DoubleSide,
     vertexShader: `uniform float uTime;varying vec3 vWorld;
  void main(){vec3 p=position;p.y+=sin(p.x*.30+p.z*.18+uTime*.8)*.065+sin(p.z*.62-p.x*.11+uTime*1.2)*.025;vec4 w=modelMatrix*vec4(p,1.);vWorld=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`,
-    fragmentShader: `uniform float uTime;uniform float uShore;uniform vec3 uShallow;uniform vec3 uDeep;varying vec3 vWorld;
+    fragmentShader: `uniform float uTime;uniform float uShore;uniform vec3 uShallow;uniform vec3 uDeep;uniform vec3 uReflection,uSunDirection,uHaze;uniform float uGlint,uNight;varying vec3 vWorld;
  void main(){float shore=clamp(max(vWorld.x-uShore,max(-vWorld.z-100.,vWorld.z-55.))/29.,0.,1.);vec3 c=mix(uShallow,uDeep,shore);
  float a=sin(vWorld.x*6.8+sin(vWorld.z*3.6+uTime)*1.7+uTime*.5);float b=sin(vWorld.z*8.4+sin(vWorld.x*2.4-uTime)*1.4);float lace=pow(clamp(1.-abs(a+b)*.7,0.,1.),15.);
- c+=vec3(.055,.09,.07)*lace*(1.-shore*.95);float crest=pow(max(0.,sin(vWorld.x*.7+vWorld.z*1.2+uTime)*sin(vWorld.z*.7-uTime*.5)),22.);c+=vec3(.15,.25,.23)*crest;
- float foam=(1.-smoothstep(.3,1.8,abs(vWorld.x-uShore)+.22*sin(vWorld.z*2.-uTime)))*(.5+.5*sin(vWorld.z*1.5+uTime));c=mix(c,vec3(.82,.97,.91),foam*.65*step(-100.,vWorld.z)*step(vWorld.z,55.));
- float haze=smoothstep(120.,260.,distance(cameraPosition,vWorld));c=mix(c,vec3(.028,.32,.62),haze*.85);float horizon=1.-smoothstep(170.,320.,distance(cameraPosition,vWorld));gl_FragColor=vec4(c,mix(.56,.99,shore)*horizon);
+ c+=vec3(.055,.09,.07)*lace*(1.-shore*.95);float crest=pow(max(0.,sin(vWorld.x*.7+vWorld.z*1.2+uTime)*sin(vWorld.z*.7-uTime*.5)),22.);c+=uReflection*crest*uGlint*.4;
+ vec3 normal=normalize(vec3(-.08*cos(vWorld.x*.3+uTime),1.,-.07*cos(vWorld.z*.62-uTime)));vec3 halfVector=normalize(normalize(cameraPosition-vWorld)+normalize(uSunDirection));float spec=pow(max(0.,dot(normal,halfVector)),100.);vec3 moonHalf=normalize(normalize(cameraPosition-vWorld)-normalize(uSunDirection));float moonSpec=pow(max(0.,dot(normal,moonHalf)),85.);c+=uReflection*mix(spec,moonSpec,uNight)*uGlint*.7;
+ float foam=(1.-smoothstep(.3,1.8,abs(vWorld.x-uShore)+.22*sin(vWorld.z*2.-uTime)))*(.5+.5*sin(vWorld.z*1.5+uTime));c=mix(c,mix(uShallow,vec3(.82,.97,.91),.4),foam*.65*step(-100.,vWorld.z)*step(vWorld.z,55.));
+ float haze=smoothstep(120.,260.,distance(cameraPosition,vWorld));c=mix(c,uHaze,haze*.85);float horizon=1.-smoothstep(170.,320.,distance(cameraPosition,vWorld));gl_FragColor=vec4(c,mix(.56,.99,shore)*horizon);
  #include <tonemapping_fragment>
  #include <colorspace_fragment>
  }`,

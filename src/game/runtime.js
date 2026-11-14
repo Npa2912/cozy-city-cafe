@@ -44,6 +44,7 @@ export function createCafeGame({
         b.maxZ >= bounds.minZ &&
         b.minZ <= bounds.maxZ,
   );
+  let paused = false;
   let active = false,
     nearest = null,
     saveClock = 0;
@@ -124,6 +125,7 @@ export function createCafeGame({
   const ui = gameUI(
     model,
     (action, id) => {
+      if (paused) return;
       if (action === "business") {
         model.toggleBusiness();
         if (model.business) model.spawnClock = 0;
@@ -199,7 +201,7 @@ export function createCafeGame({
     else if (pov.isLocked && nearest?.id === "counter") interact();
   });
   function interact() {
-    if (!nearest) return;
+    if (paused || !nearest) return;
     if (nearest.id === "door") {
       if (
         model.toggleDoor(
@@ -227,7 +229,12 @@ export function createCafeGame({
     onDirty();
   }
   window.addEventListener("keydown", (e) => {
-    if (!active || e.repeat || e.target.matches("input,textarea,select"))
+    if (
+      !active ||
+      paused ||
+      e.repeat ||
+      e.target.matches("input,textarea,select")
+    )
       return;
     if (e.code === "Escape") {
       if (ui.panel) {
@@ -402,6 +409,12 @@ export function createCafeGame({
     stop,
     persist,
     canReach,
+    get paused() {
+      return paused;
+    },
+    set paused(value) {
+      paused = !!value;
+    },
     get active() {
       return active;
     },
@@ -409,7 +422,7 @@ export function createCafeGame({
       return !!ui.panel;
     },
     update(dt) {
-      if (active) {
+      if (active && !paused) {
         for (const id of paths.keys())
           if (!model.customers.some((n) => n.id === id)) paths.delete(id);
         for (const id of entryChecks.keys())
@@ -422,8 +435,8 @@ export function createCafeGame({
           persist();
         }
       }
-      world.update(model, Math.min(dt, 0.1), active);
-      if (active) {
+      world.update(model, paused ? 0 : Math.min(dt, 0.1), active);
+      if (active && !paused) {
         let best = Infinity;
         nearest = null;
         const direction = camera.getWorldDirection(new THREE.Vector3());

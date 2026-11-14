@@ -6,6 +6,12 @@ Click **Chơi quán**, use **E** at the door, **O** to admit customers, then wal
 
 [Orders](docs/guided-orders.png) · [Brewing guide](docs/guided-brewing.png) · [Cash drawer](docs/guided-cash.png)
 
+The city now has a saved **day/night clock**: 1 real second = 1 game minute,
+starting at day 1, 07:00. Morning is gentle, noon has strong overhead sun,
+afternoon warms into a soft sunset, and night has moon/stars and automatic
+street/shop lights. The sea follows the light. [Clock controls and implementation](docs/DAY-NIGHT.md).
+[Morning](docs/time-morning.png) · [Noon](docs/time-noon.png) · [Sunset](docs/time-sunset.png) · [Night](docs/time-night.png)
+
 Earlier visual studies (before gameplay):
 
 The approved core is retained and extended by a connected commercial district,
@@ -56,8 +62,7 @@ model downloads or external asset requests are required at runtime.
 
 The van and walking routes start automatically. The browser reduced-motion
 preference reduces character gestures, while the explicit pause button stops
-the street environment for inspection. The active café shift continues
-independently. Camera controls work in either state.
+the street environment for inspection. The active café shift and world clock pause with the scene. Camera controls work in either state.
 
 ## Exterior and expanded map
 
@@ -124,6 +129,6 @@ contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test`: **58 passed**. `npm run build`: successful, with a nonfatal bundle-size advisory. Real-scene Chromium QA completed a three-customer queue, guided espresso, exact change, seating, sidewalk exit and save. Accounting: 20.000đ sales, 3.000đ ingredients, 117.000đ balance. [Validation details and limitations](docs/GAMEPLAY.md).
+`npm test`: **64 passed**. `npm run build`: successful, with a nonfatal bundle-size advisory. Real-scene Chromium QA completed a three-customer queue, guided espresso, exact change, seating, sidewalk exit and save. Accounting: 20.000đ sales, 3.000đ ingredients, 117.000đ balance. [Validation details and limitations](docs/GAMEPLAY.md).
 
 No Vercel deployment, environment publication or merge to main was performed.
