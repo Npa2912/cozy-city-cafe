@@ -1,0 +1,15 @@
+{
+  "ready": "true",
+  "developmentBridge": false,
+  "debugPanel": false,
+  "views": 21,
+  "clock": "☾ Ngày 1 – 22:00 · Ban đêm",
+  "quality": "high",
+  "errors": [],
+  "memory": {
+    "heapBytes": 631200694,
+    "highChunks": 4,
+    "geometries": 767,
+    "fadeMaterials": 1989
+  }
+}

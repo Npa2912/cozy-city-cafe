@@ -1,0 +1,59 @@
+{
+  "hardware": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "rows": [
+    {
+      "view": "street",
+      "frameMs": [
+        76.90000000037253,
+        298.09999999962747,
+        39.90000000037253,
+        22019.200000001118,
+        17.09999999962747
+      ],
+      "meanFps": 0.2227052451539228,
+      "worstFps": 0.04541491062345359,
+      "calls": 1516,
+      "triangles": 16632172,
+      "geometries": 3202,
+      "textures": 58,
+      "heap": 884894046
+    },
+    {
+      "view": "city",
+      "frameMs": [
+        111572,
+        214.5,
+        238.09999999962747,
+        26,
+        20.40000000037253
+      ],
+      "meanFps": 0.04461457468925949,
+      "worstFps": 0.008962822213458574,
+      "calls": 3949,
+      "triangles": 38861338,
+      "geometries": 3208,
+      "textures": 105,
+      "heap": 887165442
+    },
+    {
+      "view": "coast",
+      "frameMs": [
+        43.80000000074506,
+        67.69999999925494,
+        393491.4000000004,
+        142.40000000037253,
+        35.90000000037253
+      ],
+      "meanFps": 0.012697406580100792,
+      "worstFps": 0.002541351602601732,
+      "calls": 1860,
+      "triangles": 8940071,
+      "geometries": 3209,
+      "textures": 105,
+      "heap": 886575206
+    }
+  ],
+  "gpuMemoryBytes": null,
+  "note": "Headless Chromium SwiftShader software GPU; no midrange/low-end hardware FPS claim.",
+  "loadMs": 40263
+}

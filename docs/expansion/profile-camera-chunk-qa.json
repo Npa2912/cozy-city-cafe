@@ -1,0 +1,655 @@
+{
+  "loadMs": 48915,
+  "mode": "manual timer frames; hidden canvas; real synchronized GL draws",
+  "rows": [
+    {
+      "view": "street",
+      "frameMs": [
+        37033.5,
+        21.100000001490116,
+        21.199999999254942
+      ],
+      "meanFps": 0.08091531403233214,
+      "worstFps": 0.027002578746270267,
+      "calls": 1249,
+      "triangles": 33588570,
+      "geometries": 1539,
+      "textures": 100,
+      "heap": 1225243396,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 31,
+        "highBytes": 255727284,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 45.88550969532756,
+        "preload": 32,
+        "loadMs": 661.6831858753789,
+        "transitions": 27,
+        "projectedError": 16.52300607492095
+      }
+    },
+    {
+      "view": "city",
+      "frameMs": [
+        158690.59999999776,
+        39.599999997764826,
+        21.200000002980232
+      ],
+      "meanFps": 0.018897471140412167,
+      "worstFps": 0.006301570477394465,
+      "calls": 1967,
+      "triangles": 48200137,
+      "geometries": 1785,
+      "textures": 148,
+      "heap": 1355328521,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 45,
+        "highBytes": 252045858,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 111.400179533069,
+        "preload": 32,
+        "loadMs": 401.5306867731621,
+        "transitions": 48,
+        "projectedError": 1.0258945123917513
+      }
+    },
+    {
+      "view": "coast",
+      "frameMs": [
+        58084.199999999255,
+        23.199999999254942,
+        14.100000001490116
+      ],
+      "meanFps": 0.05161601128670113,
+      "worstFps": 0.01721638586741339,
+      "calls": 642,
+      "triangles": 20994101,
+      "geometries": 1796,
+      "textures": 148,
+      "heap": 1277478174,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 46,
+        "highBytes": 262167002,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 94.64142856064674,
+        "preload": 32.24307543598482,
+        "loadMs": 489.67259475387505,
+        "transitions": 54,
+        "projectedError": 2.405397007028565
+      }
+    },
+    {
+      "view": "metropolis",
+      "frameMs": [
+        288744.90000000224
+      ],
+      "meanFps": 0.0034632646325527907,
+      "worstFps": 0.0034632646325527907,
+      "calls": 2157,
+      "triangles": 27932038,
+      "geometries": 1436,
+      "textures": 151,
+      "heap": 1290824184,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 32,
+        "preload": 32,
+        "loadMs": 12047.278075803697,
+        "transitions": 54,
+        "projectedError": 0.4168142503510083
+      }
+    },
+    {
+      "view": "westDistrict",
+      "frameMs": [
+        111.10000000149012
+      ],
+      "meanFps": 9.000900089888278,
+      "worstFps": 9.000900089888278,
+      "calls": 2137,
+      "triangles": 27767132,
+      "geometries": 1436,
+      "textures": 151,
+      "heap": 1255414254,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 111.77208953938367,
+        "preload": 32,
+        "loadMs": 12047.278075803697,
+        "transitions": 54,
+        "projectedError": 0.5032334629500387
+      }
+    },
+    {
+      "view": "river",
+      "frameMs": [
+        51015.60000000149
+      ],
+      "meanFps": 0.019601847278086913,
+      "worstFps": 0.019601847278086913,
+      "calls": 1373,
+      "triangles": 39905638,
+      "geometries": 1776,
+      "textures": 151,
+      "heap": 1238533592,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 46,
+        "highBytes": 221671460,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 90.09439494219383,
+        "preload": 32,
+        "loadMs": 517.8552221097768,
+        "transitions": 96,
+        "projectedError": 1.340316825318474
+      }
+    },
+    {
+      "view": "roadBridge",
+      "frameMs": [
+        124.5
+      ],
+      "meanFps": 8.032128514056225,
+      "worstFps": 8.032128514056225,
+      "calls": 1677,
+      "triangles": 34943466,
+      "geometries": 1846,
+      "textures": 151,
+      "heap": 1289872705,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 45,
+        "highBytes": 269302264,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 63.694583757176716,
+        "preload": 33.371979268252545,
+        "loadMs": 6479.238462196005,
+        "transitions": 103,
+        "projectedError": 4.6044272150836445
+      }
+    },
+    {
+      "view": "gardenBridge",
+      "frameMs": [
+        44.400000002235174
+      ],
+      "meanFps": 22.522522521388698,
+      "worstFps": 22.522522521388698,
+      "calls": 1095,
+      "triangles": 21148675,
+      "geometries": 1711,
+      "textures": 151,
+      "heap": 1506601321,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 30,
+        "highBytes": 235667572,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 45.221676218380054,
+        "preload": 32.25314041092863,
+        "loadMs": 539.1679993480207,
+        "transitions": 123,
+        "projectedError": 5.154422157918353
+      }
+    },
+    {
+      "view": "marketQuarter",
+      "frameMs": [
+        39
+      ],
+      "meanFps": 25.641025641025642,
+      "worstFps": 25.641025641025642,
+      "calls": 598,
+      "triangles": 28110484,
+      "geometries": 1788,
+      "textures": 151,
+      "heap": 1494140335,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 53,
+        "highBytes": 268928728,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 71.47027354082255,
+        "preload": 32.20753537561836,
+        "loadMs": 304.56773548831677,
+        "transitions": 155,
+        "projectedError": 5.154422157918353
+      }
+    },
+    {
+      "view": "toAnteleo",
+      "frameMs": [
+        37099
+      ],
+      "meanFps": 0.02695490444486374,
+      "worstFps": 0.02695490444486374,
+      "calls": 1334,
+      "triangles": 32229030,
+      "geometries": 1835,
+      "textures": 151,
+      "heap": 1538355555,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 43,
+        "highBytes": 263249796,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 46.86149805543993,
+        "preload": 32.265281811941286,
+        "loadMs": 610.3623977968745,
+        "transitions": 176,
+        "projectedError": 3.8419642539423324
+      }
+    },
+    {
+      "view": "citySea",
+      "frameMs": [
+        90.69999999925494
+      ],
+      "meanFps": 11.025358324236104,
+      "worstFps": 11.025358324236104,
+      "calls": 2164,
+      "triangles": 27935198,
+      "geometries": 1436,
+      "textures": 151,
+      "heap": 1542140946,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 32,
+        "preload": 32,
+        "loadMs": 610.3623977968745,
+        "transitions": 176,
+        "projectedError": 0.4422774129300494
+      }
+    },
+    {
+      "view": "staff",
+      "frameMs": [
+        101935.30000000075
+      ],
+      "meanFps": 0.009810144277791822,
+      "worstFps": 0.009810144277791822,
+      "calls": 724,
+      "triangles": 15802730,
+      "geometries": 1684,
+      "textures": 151,
+      "heap": 1278273946,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 31,
+        "highBytes": 268737952,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 40.65076875041848,
+        "preload": 32,
+        "loadMs": 793.8210010946815,
+        "transitions": 203,
+        "projectedError": 15.381534317662817
+      }
+    },
+    {
+      "view": "residential",
+      "frameMs": [
+        72.59999999776483
+      ],
+      "meanFps": 13.774104683619663,
+      "worstFps": 13.774104683619663,
+      "calls": 1411,
+      "triangles": 32211284,
+      "geometries": 1745,
+      "textures": 151,
+      "heap": 1502983168,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 41,
+        "highBytes": 271397146,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 48.083261120685236,
+        "preload": 32.0906660788555,
+        "loadMs": 338.5615630756715,
+        "transitions": 228,
+        "projectedError": 2.929005487970423
+      }
+    },
+    {
+      "view": "marine",
+      "frameMs": [
+        19064.300000000745
+      ],
+      "meanFps": 0.052454063354015666,
+      "worstFps": 0.052454063354015666,
+      "calls": 528,
+      "triangles": 32655982,
+      "geometries": 1797,
+      "textures": 151,
+      "heap": 1546231377,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 47,
+        "highBytes": 263390854,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 82.96987405076615,
+        "preload": 32.077945293785405,
+        "loadMs": 176.9517218760486,
+        "transitions": 237,
+        "projectedError": 10.25151920789648
+      }
+    },
+    {
+      "view": "expanded",
+      "frameMs": [
+        37388
+      ],
+      "meanFps": 0.026746549695089335,
+      "worstFps": 0.026746549695089335,
+      "calls": 1828,
+      "triangles": 46014528,
+      "geometries": 1855,
+      "textures": 151,
+      "heap": 1223474049,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 48,
+        "highBytes": 263757642,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 94.93682109698008,
+        "preload": 32.077408772021656,
+        "loadMs": 170.9213775009879,
+        "transitions": 238,
+        "projectedError": 1.8151317985473892
+      }
+    },
+    {
+      "view": "overview",
+      "frameMs": [
+        79825.5
+      ],
+      "meanFps": 0.012527325228153911,
+      "worstFps": 0.012527325228153911,
+      "calls": 1278,
+      "triangles": 32671790,
+      "geometries": 1864,
+      "textures": 151,
+      "heap": 1387854205,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 42,
+        "highBytes": 267218966,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 48.65685974248646,
+        "preload": 32,
+        "loadMs": 518.3915814845296,
+        "transitions": 248,
+        "projectedError": 3.1216455695482335
+      }
+    },
+    {
+      "view": "flowers",
+      "frameMs": [
+        46230.300000000745
+      ],
+      "meanFps": 0.021630835188177103,
+      "worstFps": 0.021630835188177103,
+      "calls": 1309,
+      "triangles": 32822362,
+      "geometries": 1858,
+      "textures": 151,
+      "heap": 1333796435,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 36,
+        "highBytes": 271165432,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 47.60514678057405,
+        "preload": 32.117854481684574,
+        "loadMs": 679.9866121498904,
+        "transitions": 250,
+        "projectedError": 10.825317547305483
+      }
+    },
+    {
+      "view": "counter",
+      "frameMs": [
+        27394.599999997765
+      ],
+      "meanFps": 0.03650354449417336,
+      "worstFps": 0.03650354449417336,
+      "calls": 428,
+      "triangles": 11938208,
+      "geometries": 1743,
+      "textures": 151,
+      "heap": 1441575235,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 29,
+        "highBytes": 263686424,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 41.539017802543185,
+        "preload": 32.12296234698556,
+        "loadMs": 741.0908258019666,
+        "transitions": 260,
+        "projectedError": 14.269868882886273
+      }
+    },
+    {
+      "view": "annex",
+      "frameMs": [
+        35878.79999999702
+      ],
+      "meanFps": 0.027871612205538732,
+      "worstFps": 0.027871612205538732,
+      "calls": 569,
+      "triangles": 24158662,
+      "geometries": 1820,
+      "textures": 151,
+      "heap": 1299178639,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 31,
+        "highBytes": 266162212,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 43.2862564793954,
+        "preload": 32.0685692174529,
+        "loadMs": 408.2615310386111,
+        "transitions": 266,
+        "projectedError": 12.311259428372473
+      }
+    },
+    {
+      "view": "pos",
+      "frameMs": [
+        30717.10000000149
+      ],
+      "meanFps": 0.03255515657402396,
+      "worstFps": 0.03255515657402396,
+      "calls": 385,
+      "triangles": 13334646,
+      "geometries": 1788,
+      "textures": 151,
+      "heap": 1413145203,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 35,
+        "highBytes": 266721680,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 43.71727347399423,
+        "preload": 32.066249968008336,
+        "loadMs": 283.6613443142509,
+        "transitions": 282,
+        "projectedError": 15.687371784968901
+      }
+    },
+    {
+      "view": "fishing",
+      "frameMs": [
+        13422.900000002235
+      ],
+      "meanFps": 0.07449954927771446,
+      "worstFps": 0.07449954927771446,
+      "calls": 2016,
+      "triangles": 46400612,
+      "geometries": 1874,
+      "textures": 151,
+      "heap": 1446851849,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 48,
+        "highBytes": 263757642,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 92.11405973031479,
+        "preload": 32,
+        "loadMs": 371.4663043054046,
+        "transitions": 307,
+        "projectedError": 4.70181616336583
+      }
+    }
+  ],
+  "routes": [
+    {
+      "speed": 5,
+      "crossed": 4,
+      "maxMovementAndPlanMs": 13.300000000745058,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 44.47376296097949,
+        "preload": 37.85733152152669,
+        "loadMs": 516.9786382747493,
+        "transitions": 307,
+        "projectedError": 20.007728354748213
+      }
+    },
+    {
+      "speed": 9,
+      "crossed": 4,
+      "maxMovementAndPlanMs": 12.800000000745058,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 44.34894816423659,
+        "preload": 43.8528077444732,
+        "loadMs": 378.102004551143,
+        "transitions": 333,
+        "projectedError": 20.007728354748213
+      }
+    },
+    {
+      "speed": 25,
+      "crossed": 4,
+      "maxMovementAndPlanMs": 12.199999999254942,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98112229,
+        "sourceByteEstimate": 1096890498,
+        "radius": 44.61288828919076,
+        "preload": 61.45255493905895,
+        "loadMs": 587.7569101983445,
+        "transitions": 360,
+        "projectedError": 20.007728354748213
+      }
+    }
+  ],
+  "shots": [
+    "metropolis",
+    "river",
+    "roadBridge",
+    "gardenBridge",
+    "staff"
+  ],
+  "errors": [],
+  "hardware": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "chunks": {
+    "chunks": 163,
+    "highChunks": 28,
+    "highBytes": 226297872,
+    "compressedBytes": 98112229,
+    "sourceByteEstimate": 1096890498,
+    "radius": 39.27187288632922,
+    "preload": 32,
+    "loadMs": 781.7330027593696,
+    "transitions": 0,
+    "projectedError": 4.956901822476287
+  },
+  "allLandscape": true,
+  "frustumCulling": true,
+  "gpuMemoryBytes": null,
+  "memory": [
+    {
+      "heap": 905343390,
+      "highChunks": 4,
+      "fadeMaterials": 2361,
+      "geometries": 1436
+    },
+    {
+      "heap": 905290242,
+      "highChunks": 4,
+      "fadeMaterials": 2361,
+      "geometries": 1436
+    },
+    {
+      "heap": 905353814,
+      "highChunks": 4,
+      "fadeMaterials": 2361,
+      "geometries": 1436
+    }
+  ],
+  "quality": [
+    {
+      "level": "low",
+      "calls": 2170,
+      "width": 680,
+      "shadow": 1024
+    },
+    {
+      "level": "medium",
+      "calls": 2170,
+      "width": 800,
+      "shadow": 1536
+    },
+    {
+      "level": "high",
+      "calls": 2170,
+      "width": 800,
+      "shadow": 2048
+    }
+  ],
+  "note": "SwiftShader software GPU. Main loop stopped; timer-based chunk warming and hidden canvas avoid compositor stalls. Synchronized GL samples are not interactive FPS or upload-hitch certification. Initial procedural construction remains. GPU VRAM API unavailable."
+}

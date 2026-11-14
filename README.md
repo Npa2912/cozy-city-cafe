@@ -1,5 +1,7 @@
 # ANTELEO · Guided Café Gameplay & City Preview
 
+[Western river-city expansion, chunk streaming and measured limitations](docs/CITY-EXPANSION.md). The existing café and coast are retained; 45 buildings, four traversable bridges and eight additional views extend the city. Shift runs in POV. High is the default graphics preset; `?perf=1` opens diagnostics.
+
 A playable café in the existing Vite + Three.js city: at most three customers stay inside with two outdoor waits, customers arrive every 20–35 seconds, orders queue FIFO, the player selects one order, follows 3–5 highlighted brewing steps, gives change in VND and serves customers who then sit or take away. The fixed barista is removed and the staff counter is cleared and reoriented.
 
 Click **Chơi quán**, use **E** at the door, **O** to admit customers, then walk around the right end of the counter to the staff POS. Start the first order and follow the golden markers. Payment happens before seating. **J** opens quests; settings provide static highlights and easier change. [Play guide, save migration and tested scope](docs/GAMEPLAY.md).
@@ -129,6 +131,6 @@ contents; the main café has actual interior geometry.
 
 ## Validation
 
-`npm test`: **64 passed**. `npm run build`: successful, with a nonfatal bundle-size advisory. Real-scene Chromium QA completed a three-customer queue, guided espresso, exact change, seating, sidewalk exit and save. Accounting: 20.000đ sales, 3.000đ ingredients, 117.000đ balance. [Validation details and limitations](docs/GAMEPLAY.md).
+`npm test`: **88 passed** (including expanded map, streaming codec and closing checks). `npm run build`: successful, with a nonfatal bundle-size advisory. The preceding café UI milestone completed a three-customer queue, guided espresso, exact change, seating, sidewalk exit and save. Accounting: 20.000đ sales, 3.000đ ingredients, 117.000đ balance. [Validation details and limitations](docs/GAMEPLAY.md).
 
 No Vercel deployment, environment publication or merge to main was performed.

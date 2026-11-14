@@ -1,0 +1,303 @@
+{
+  "mode": "manual timer frames, hidden canvas, synchronized GL; not native interactive FPS",
+  "rows": [
+    {
+      "view": "street",
+      "position": [
+        10.8,
+        1.9,
+        5.8
+      ],
+      "target": [
+        -3.8,
+        3.2,
+        -8
+      ],
+      "fov": 65,
+      "frameMs": [
+        1103.7999999970198,
+        28.800000000745058,
+        33.400000002235174
+      ],
+      "meanFps": 2.5728987993138936,
+      "worstFps": 0.9059612248620221,
+      "calls": 1120,
+      "triangles": 28336146,
+      "geometries": 1050,
+      "textures": 100,
+      "heap": 907152142,
+      "shadow": {
+        "passes": 1,
+        "skippedDarkPasses": 1,
+        "objects": 0,
+        "originalTriangles": 0,
+        "proxyTriangles": 0
+      },
+      "colorGeometryDrawsVerified": 750,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 28,
+        "highBytes": 226297872,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 45.88550969532756,
+        "preload": 32,
+        "loadMs": 817.43340771135,
+        "transitions": 24,
+        "projectedError": 16.52300607492095
+      }
+    },
+    {
+      "view": "city",
+      "position": [
+        101,
+        60,
+        79
+      ],
+      "target": [
+        22,
+        7,
+        -8
+      ],
+      "fov": 36,
+      "frameMs": [
+        109616.89999999851,
+        65.19999999925494,
+        35.30000000074506
+      ],
+      "meanFps": 0.027342973858294498,
+      "worstFps": 0.009122680900481711,
+      "calls": 1837,
+      "triangles": 47780009,
+      "geometries": 1497,
+      "textures": 148,
+      "heap": 913458009,
+      "shadow": {
+        "passes": 2,
+        "skippedDarkPasses": 1,
+        "objects": 48,
+        "originalTriangles": 13373960,
+        "proxyTriangles": 4296488
+      },
+      "colorGeometryDrawsVerified": 1149,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 45,
+        "highBytes": 248116778,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 111.400179533069,
+        "preload": 32,
+        "loadMs": 259.7277710461411,
+        "transitions": 43,
+        "projectedError": 1.0258945123917513
+      }
+    },
+    {
+      "view": "coast",
+      "position": [
+        82,
+        15,
+        35
+      ],
+      "target": [
+        80,
+        2,
+        -24
+      ],
+      "fov": 58,
+      "frameMs": [
+        170193.5,
+        33.600000001490116,
+        16.800000000745058
+      ],
+      "meanFps": 0.017621776756758748,
+      "worstFps": 0.005875665051838055,
+      "calls": 616,
+      "triangles": 21021437,
+      "geometries": 1515,
+      "textures": 148,
+      "heap": 927336996,
+      "shadow": {
+        "passes": 3,
+        "skippedDarkPasses": 1,
+        "objects": 0,
+        "originalTriangles": 0,
+        "proxyTriangles": 0
+      },
+      "colorGeometryDrawsVerified": 360,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 46,
+        "highBytes": 262167002,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 94.64142856064674,
+        "preload": 32.02689578565094,
+        "loadMs": 429.8604896128037,
+        "transitions": 49,
+        "projectedError": 2.405397007028565
+      }
+    },
+    {
+      "view": "metropolis",
+      "position": [
+        135,
+        125,
+        155
+      ],
+      "target": [
+        -40,
+        4,
+        -20
+      ],
+      "fov": 42,
+      "frameMs": [
+        256896.1000000015,
+        37.30000000074506,
+        40.5
+      ],
+      "meanFps": 0.01167433735488302,
+      "worstFps": 0.003892624294413166,
+      "calls": 1981,
+      "triangles": 27932422,
+      "geometries": 1272,
+      "textures": 151,
+      "heap": 903584777,
+      "shadow": {
+        "passes": 4,
+        "skippedDarkPasses": 1,
+        "objects": 5,
+        "originalTriangles": 1955960,
+        "proxyTriangles": 849056,
+        "depthDrawCalls": 1649,
+        "depthTriangles": 13253672,
+        "submitMs": 91
+      },
+      "colorGeometryDrawsVerified": 1350,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 4,
+        "highBytes": 26233240,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 32,
+        "preload": 32,
+        "loadMs": 429.8604896128037,
+        "transitions": 49,
+        "projectedError": 0.4168142503510083
+      }
+    },
+    {
+      "view": "roadBridge",
+      "position": [
+        -79,
+        11,
+        38
+      ],
+      "target": [
+        -79,
+        0.8,
+        22
+      ],
+      "fov": 58,
+      "frameMs": [
+        797.3000000007451,
+        19.799999997019768,
+        9.200000002980232
+      ],
+      "meanFps": 3.630642623741129,
+      "worstFps": 1.2542330364970093,
+      "calls": 702,
+      "triangles": 30022396,
+      "geometries": 1580,
+      "textures": 151,
+      "heap": 873677366,
+      "shadow": {
+        "passes": 5,
+        "skippedDarkPasses": 1,
+        "objects": 0,
+        "originalTriangles": 0,
+        "proxyTriangles": 0,
+        "depthDrawCalls": 286,
+        "depthTriangles": 13973988,
+        "submitMs": 217.90000000223517
+      },
+      "colorGeometryDrawsVerified": 633,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 42,
+        "highBytes": 220344268,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 62.64982043070834,
+        "preload": 32,
+        "loadMs": 444.33914281010584,
+        "transitions": 87,
+        "projectedError": 3.2800868277662247
+      }
+    },
+    {
+      "view": "gardenBridge",
+      "position": [
+        -73,
+        10,
+        -22
+      ],
+      "target": [
+        -72,
+        0.8,
+        -40
+      ],
+      "fov": 58,
+      "frameMs": [
+        166,
+        7.800000000745058,
+        5.5
+      ],
+      "meanFps": 16.73173452307604,
+      "worstFps": 6.024096385542169,
+      "calls": 385,
+      "triangles": 18010574,
+      "geometries": 1612,
+      "textures": 151,
+      "heap": 1100679933,
+      "shadow": {
+        "passes": 6,
+        "skippedDarkPasses": 1,
+        "objects": 0,
+        "originalTriangles": 0,
+        "proxyTriangles": 0,
+        "depthDrawCalls": 410,
+        "depthTriangles": 16154502,
+        "submitMs": 116.10000000149012
+      },
+      "colorGeometryDrawsVerified": 300,
+      "chunks": {
+        "chunks": 163,
+        "highChunks": 29,
+        "highBytes": 252629992,
+        "compressedBytes": 98145553,
+        "sourceByteEstimate": 1096890498,
+        "radius": 38.01315561749642,
+        "preload": 32.027473235766585,
+        "loadMs": 456.2654844757934,
+        "transitions": 105,
+        "projectedError": 3.608095510542847
+      }
+    }
+  ],
+  "errors": [],
+  "night": {
+    "shadow": {
+      "passes": 6,
+      "skippedDarkPasses": 2,
+      "objects": 0,
+      "originalTriangles": 0,
+      "proxyTriangles": 0,
+      "depthDrawCalls": 0,
+      "depthTriangles": 0,
+      "submitMs": 0
+    }
+  }
+}

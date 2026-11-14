@@ -1,0 +1,94 @@
+{
+  "baselineCommit": "a2f61847b2c5e980f09a6618198a4c4f586deac5",
+  "unitTests": {
+    "passed": 88,
+    "failed": 0
+  },
+  "build": "passed; Vite bundle-size advisory only",
+  "doorway": {
+    "simulatedSeconds": 900,
+    "completedDuringTimedRun": 10,
+    "completedIncludingControlledCases": 16,
+    "minimumPairSeparation": 0.7811981965321696,
+    "maxInside": 3,
+    "maxOutsideTimed": 1,
+    "maxOutsideControlled": 2,
+    "singleTransit": true,
+    "outsideWithdrawnOnClosing": true,
+    "insideOrdersPreserved": true,
+    "allDepartedAndAutoClosed": true
+  },
+  "hardwareFpsTargetsVerified": false,
+  "gpuVramApiAvailable": false,
+  "cameraSweep": {
+    "rendered": 21,
+    "bridgeViewsRepositionedAndRechecked": 2
+  },
+  "bridges": {
+    "count": 4,
+    "testedSpeeds": [
+      5,
+      9,
+      25
+    ]
+  },
+  "memoryCycles": {
+    "heapBytes": [
+      905343390,
+      905290242,
+      905353814
+    ],
+    "materialCounts": [
+      2361,
+      2361,
+      2361
+    ],
+    "geometryCounts": [
+      1436,
+      1436,
+      1436
+    ]
+  },
+  "scope": "Practical modest improvements; no hardware FPS guarantee",
+  "finalNpcFlow": {
+    "entry": true,
+    "exit": true,
+    "allDeparted": true,
+    "autoClosed": true,
+    "cash": 117000,
+    "revenue": 20000
+  },
+  "bridgePavingCheck": [
+    {
+      "view": "roadBridge",
+      "calls": 706
+    },
+    {
+      "view": "gardenBridge",
+      "calls": 388
+    }
+  ],
+  "codeCommit": "ec63534",
+  "renderCheckpointCommit": "b838e2e",
+  "finalMemorySnapshot": {
+    "heapBytes": 631200694,
+    "highChunks": 4,
+    "geometries": 767,
+    "fadeMaterials": 1989
+  },
+  "productionSmoke": {
+    "ready": "true",
+    "developmentBridge": false,
+    "debugPanel": false,
+    "views": 21,
+    "clock": "\u263e Ng\u00e0y 1 \u2013 22:00 \u00b7 Ban \u0111\u00eam",
+    "quality": "high",
+    "errors": [],
+    "memory": {
+      "heapBytes": 631200694,
+      "highChunks": 4,
+      "geometries": 767,
+      "fadeMaterials": 1989
+    }
+  }
+}
