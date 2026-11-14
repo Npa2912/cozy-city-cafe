@@ -53,6 +53,6 @@ export function westernFloor(p){
  const ped=BRIDGES.find(b=>!b.road);if(Math.abs(z-ped.z)<=2.2&&x>=-97.3&&x<=-50.7)return .23;
  if(x<=-141||z<=-105.4||z>=47)return .23;
  for(const lot of [...WEST_BUILDINGS,...WEST_TOWERS]){const r=westBounds(lot);if(x>=r.minX-.25&&x<=r.maxX+.25&&z>=r.minZ-.25&&z<=r.maxZ+.25)return .23;}
- if(x>=-29.5||((Math.abs(x+135)<5||Math.abs(x+112)<5.3)&&Math.abs(z-32)<4.7))return .23;
+ if(Math.hypot(x+31.4,z-32)<3.5||x>=-29.5||((Math.abs(x+135)<5||Math.abs(x+112)<5.3)&&Math.abs(z-32)<4.7))return .23;
  return -.17;
 }

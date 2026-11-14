@@ -50,6 +50,7 @@ export function createChunkStreaming(scene,renderer,camera){
   r.low.children.forEach(o=>bind(o,r,false));scene.add(r.low,r.high);
   if(r.pinned){startPack(r);const temp=new THREE.Scene();for(const o of r.sources)temp.add(o);batchStaticScene(temp);const objects=[];temp.traverse(o=>{if(o.isMesh)objects.push(o)});install(r,objects);r.sources=[];}
  }
+ source.length=0;lowObjects.length=0;
  async function packNext(){if(packing||!alive)return;const r=records.find(q=>!q.packed&&!q.packPromise&&!q.loading);if(!r)return;packing=true;try{await startPack(r);}finally{packing=false;}}
  async function loadNext(){
   if(busy||!alive)return;
@@ -65,8 +66,12 @@ export function createChunkStreaming(scene,renderer,camera){
    for(const o of objects)o.visible=false;
    await renderer.compileAsync(r.high,camera,scene);
    let page=[],pageBytes=0;
-   const uploadPage=async()=>{for(const o of page){o.visible=true;o.castShadow=false;}await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));for(const o of page)o.visible=false;page=[];pageBytes=0;};
-   for(const o of objects){if(!alive||!r.wanted)break;const bytes=geometryBytes(o);if(page.length&&(pageBytes+bytes>1572864||page.length>=64))await uploadPage();page.push(o);pageBytes+=bytes;}if(page.length)await uploadPage();
+   const uploadPage=async()=>{
+    for(const o of page){o.visible=true;o.castShadow=false;o.userData.warmFrustum=o.frustumCulled;o.frustumCulled=false;}
+    await new Promise(resolve=>{let id,done=false;const finish=()=>{if(done)return;done=true;cancelAnimationFrame(id);r.cancelWarm=null;resolve();};r.cancelWarm=finish;id=requestAnimationFrame(()=>{id=requestAnimationFrame(finish);});});
+    for(const o of page){o.visible=false;o.frustumCulled=o.userData.warmFrustum;delete o.userData.warmFrustum;}page=[];pageBytes=0;
+   };
+   for(const o of objects){if(!alive||!r.wanted)break;const bytes=geometryBytes(o);if(page.length&&(pageBytes+bytes>1572864||page.length>=64)){await uploadPage();if(!alive||!r.wanted)break;}page.push(o);pageBytes+=bytes;}if(page.length&&alive&&r.wanted)await uploadPage();
    for(const o of objects){o.visible=true;o.castShadow=!!o.userData.originalCast&&r.weight>=.5;}
    r.ready=true;latency=latency*.8+(performance.now()-start)*.2;stats.loadMs=latency;
   }catch(e){console.error('Chunk restore failed',r.key,e);}finally{busy=r.loading=false;}
@@ -75,6 +80,7 @@ export function createChunkStreaming(scene,renderer,camera){
   for(const r of records){const d=Math.hypot(r.center.x-camera.position.x,r.center.z-camera.position.z),predicted=Math.hypot(r.center.x-ahead.x,r.center.z-ahead.z);const selected=d<radius+16||(d<radius+preload&&predicted<radius);r.priority=d<CHUNK_POLICY.nearRadius?d-1000:d-Math.max(0,r.center.clone().sub(camera.position).normalize().dot(direction))*preload*.7;r.wanted=r.pinned||(!distantOverview&&(selected||(r.wanted&&d<radius+preload+32)));}
   const budget=CHUNK_POLICY.budgetMiB[level]*1048576;let selectedBytes=records.filter(r=>r.wanted).reduce((s,r)=>s+r.bytes,0);
   for(const r of [...records].sort((a,b)=>(b.priority??0)-(a.priority??0))){if(selectedBytes<=budget*1.35)break;if(r.wanted&&!r.pinned&&Math.hypot(r.center.x-camera.position.x,r.center.z-camera.position.z)>CHUNK_POLICY.nearRadius){r.wanted=false;selectedBytes-=r.bytes;}}
+  for(const r of records)if(!r.wanted)r.cancelWarm?.();
   stats.radius=radius;stats.preload=preload;stats.projectedError=projectedError;
  }
  function update(dt,level='high'){
@@ -87,5 +93,5 @@ export function createChunkStreaming(scene,renderer,camera){
   stats.highChunks=records.filter(r=>r.high.children.length).length;stats.highBytes=records.filter(r=>r.high.children.length).reduce((s,r)=>s+r.bytes,0);packNext();loadNext();
  }
  plan('high');update(0);
- return{update,stats,records,get needsRender(){return busy||dirty||records.some(r=>r.weight>0&&r.weight<1);},async settle(){while(records.some(r=>!r.packed||(r.wanted&&!r.ready))||packing||busy){await packNext();loadNext();await new Promise(r=>setTimeout(r,10));}return stats;},dispose(){alive=false;for(const r of records){disposeObjects([...r.high.children,...r.low.children,...r.sources]);r.high.removeFromParent();r.low.removeFromParent();for(const m of [...r.highMaterials.values(),...r.lowMaterials.values()])m.dispose();}records.length=0;}};
+ return{update,stats,records,get needsRender(){return busy||dirty||records.some(r=>r.weight>0&&r.weight<1);},async settle(){while(records.some(r=>!r.packed||(r.wanted&&!r.ready))||packing||busy){await packNext();loadNext();await new Promise(r=>setTimeout(r,10));}return stats;},dispose(){alive=false;for(const r of records){r.cancelWarm?.();disposeObjects([...r.high.children,...r.low.children,...r.sources]);r.high.removeFromParent();r.low.removeFromParent();for(const m of [...r.highMaterials.values(),...r.lowMaterials.values()])m.dispose();}records.length=0;}};
 }
